@@ -16,49 +16,50 @@ public class PackageController
         string authHeader = e.Headers.FirstOrDefault(h => h.Name.Equals("Authorization")).Value;
         string token = authHeader?.Split(' ').LastOrDefault();
 
-
-        //TOKEN BITTE - HIER NOTLÖSUNG MIT USERNAME ### ----------------
         string pattern = @"^([^-]+)-mtcgToken$";
         string username_iotoken = "failed";
-        Console.WriteLine("###TOKEN####: " + token);
         Match match = Regex.Match(token, pattern);
 
-        // Check if a match was found
         if (match.Success)
         {
-            // Extract and return the captured group
             username_iotoken = match.Groups[1].Value;
-            Console.WriteLine("#######" + username_iotoken);
         }
         else
         {
-            // Return null or an appropriate value if no match was found
-            throw new Exception("REGEX THING FAILED: " + username_iotoken + " /from/ " + token);
+            e.Reply(401, "Access token is missing or invalid");
             return;
         }
-        // -------------------------------------------------------------
 
-
-        // Authenticate the user
-        var user = _transactionRepository.AuthenticateUser(username_iotoken);
-
-        // Deduct coins (assuming a package costs 5 coins, adjust as needed)
-        const int packageCost = 5;
-        _transactionRepository.DeductCoins(user, packageCost);
-
-        // Assign a package to the user
         try
         {
+            var user = _transactionRepository.AuthenticateUser(username_iotoken);
+
+            // Check for package availability first without deducting coins
+            if (!_packageRepository.IsPackageAvailable())
+            {
+                e.Reply(404, "No card package available for buying.");
+                return;
+            }
+
+            // If a package is available, then deduct coins
+            const int packageCost = 5;
+            if (!_transactionRepository.DeductCoins(user, packageCost))
+            {
+                e.Reply(403, "Not enough money for buying a card package");
+                return;
+            }
+
+            // Now that we have checked for package availability and deducted coins, we can acquire the package
             _packageRepository.AcquirePackageForUser(user);
             e.Reply(200, "Package acquired successfully");
         }
-        catch (AuthenticationException ex)
+        catch (AuthenticationException)
         {
-            e.Reply(401, $"Authentication failed: {ex.Message}");
+            e.Reply(401, "Authentication failed.");
         }
-        catch (InsufficientCoinsException ex)
+        catch (NoPackagesAvailableException)
         {
-            e.Reply(402, $"Insufficient coins: {ex.Message}");
+            e.Reply(404, "No card package available for buying.");
         }
         catch (Exception ex)
         {
@@ -68,6 +69,7 @@ public class PackageController
     }
 }
 
-public class InsufficientCoinsException : Exception
+//### hier so? wo sonst? andere exc?
+public class NoPackagesAvailableException : Exception
 {
 }

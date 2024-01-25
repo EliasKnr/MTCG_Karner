@@ -10,7 +10,7 @@ public class TransactionRepository
     public User AuthenticateUser(string usernameiotoken)
     {
         // ### TOKEN NEEDED ### Replace the following with your actual database logic to authenticate the user by token
-         string query = "SELECT * FROM users WHERE username = @username";
+        string query = "SELECT * FROM users WHERE username = @username";
 
         using (var conn = new NpgsqlConnection(DBAccess.ConnectionString))
         using (var cmd = new NpgsqlCommand(query, conn))
@@ -43,22 +43,28 @@ public class TransactionRepository
         }
     }
 
-    public void DeductCoins(User user, int cost)
+    public bool DeductCoins(User user, int cost)
     {
         if (user.Coins < cost)
-            throw new Exception("Insufficient coins.");
-
-        string updateQuery = "UPDATE users SET coins = coins - @Cost WHERE username = @Username";
-
-        using (var conn = new NpgsqlConnection(DBAccess.ConnectionString))
-        using (var cmd = new NpgsqlCommand(updateQuery, conn))
         {
-            cmd.Parameters.AddWithValue("@Cost", cost);
-            cmd.Parameters.AddWithValue("@Username", user.Username);
-            conn.Open();
-
-            if (cmd.ExecuteNonQuery() != 1)
-                throw new Exception("Failed to deduct coins.");
+            return false;
         }
+        else
+        {
+            string updateQuery = "UPDATE users SET coins = coins - @Cost WHERE username = @Username";
+
+            using (var conn = new NpgsqlConnection(DBAccess.ConnectionString))
+            using (var cmd = new NpgsqlCommand(updateQuery, conn))
+            {
+                cmd.Parameters.AddWithValue("@Cost", cost);
+                cmd.Parameters.AddWithValue("@Username", user.Username);
+                conn.Open();
+
+                if (cmd.ExecuteNonQuery() != 1)
+                    throw new Exception("Failed to deduct coins.");
+            }
+            return true;
+        }
+        
     }
 }
