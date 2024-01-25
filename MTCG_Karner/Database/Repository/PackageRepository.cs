@@ -68,46 +68,86 @@ public class PackageRepository
             {
                 try
                 {
-                    // Since IsPackageAvailable has been called, we know there's at least one package
+                    // Fetch a random package
                     var selectCmd = new NpgsqlCommand(
                         "SELECT id, card_id1, card_id2, card_id3, card_id4, card_id5 FROM packages ORDER BY RANDOM() LIMIT 1",
                         conn);
+                    int packageId;
+                    List<Guid> packageCardIds = new List<Guid>(); // List to store card IDs from the package
+
                     using (var reader = selectCmd.ExecuteReader())
                     {
-                        reader.Read(); // No need to check for Read() result as we know a package is available
-                        int packageId = reader.GetInt32(reader.GetOrdinal("id"));
-                        List<Guid> cardIds = new List<Guid>();
+                        if (!reader.Read())
+                        {
+                            throw new NoPackagesAvailableException("No packages available.");
+                        }
 
-                        // Retrieve and store all card IDs
+                        packageId = reader.GetInt32(reader.GetOrdinal("id"));
+
+                        // Retrieve and store all card IDs from the package
                         for (int i = 1; i <= 5; i++)
                         {
-                            cardIds.Add(reader.GetGuid(reader.GetOrdinal($"card_id{i}")));
+                            packageCardIds.Add(reader.GetGuid(reader.GetOrdinal($"card_id{i}")));
                         }
 
                         reader.Close();
+                    }
 
-                        // Transfer ownership of cards
-                        foreach (var cardId in cardIds)
+                    // Transfer ownership of cards from the package
+                    foreach (var cardId in packageCardIds)
+                    {
+                        var updateCmd = new NpgsqlCommand(
+                            "UPDATE cards SET owner_id = @OwnerId WHERE id = @CardId", conn);
+                        updateCmd.Parameters.AddWithValue("@OwnerId", user.Id);
+                        updateCmd.Parameters.AddWithValue("@CardId", cardId);
+                        updateCmd.ExecuteNonQuery();
+                    }
+
+                    // Remove the acquired package
+                    var deleteCmd = new NpgsqlCommand("DELETE FROM packages WHERE id = @PackageId", conn);
+                    deleteCmd.Parameters.AddWithValue("@PackageId", packageId);
+                    deleteCmd.ExecuteNonQuery();
+
+                    // Create default deck of 4 strongest cards if the user doesn't have a deck
+                    // Check if the user already has a deck
+                    var checkDeckExistsCmd =
+                        new NpgsqlCommand("SELECT COUNT(*) FROM decks WHERE user_id = @UserId", conn);
+                    checkDeckExistsCmd.Parameters.AddWithValue("@UserId", user.Id);
+                    var deckExists = (long)checkDeckExistsCmd.ExecuteScalar() > 0;
+
+                    if (!deckExists)
+                    {
+                        // Get the top 4 card IDs by damage from the package
+                        var topCardIds = packageCardIds.OrderByDescending(id =>
                         {
-                            var updateCmd = new NpgsqlCommand(
-                                "UPDATE cards SET owner_id = @OwnerId WHERE id = @CardId", conn);
-                            updateCmd.Parameters.AddWithValue("@OwnerId", user.Id);
-                            updateCmd.Parameters.AddWithValue("@CardId", cardId);
-                            updateCmd.ExecuteNonQuery();
+                            var damageCmd = new NpgsqlCommand("SELECT damage FROM cards WHERE id = @CardId", conn);
+                            damageCmd.Parameters.AddWithValue("@CardId", id);
+                            return Convert.ToDouble(damageCmd.ExecuteScalar());
+                        }).Take(4).ToList();
+
+                        // Insert the new deck with the top 4 cards from the package
+                        var deckInsertCmd = new NpgsqlCommand(
+                            "INSERT INTO decks (user_id, card_id1, card_id2, card_id3, card_id4) VALUES (@UserId, @CardId1, @CardId2, @CardId3, @CardId4)",
+                            conn);
+                        deckInsertCmd.Parameters.AddWithValue("@UserId", user.Id);
+                        for (int i = 0; i < topCardIds.Count; i++)
+                        {
+                            deckInsertCmd.Parameters.AddWithValue($"@CardId{i + 1}", topCardIds[i]);
                         }
 
-                        // Remove the acquired package
-                        var deleteCmd = new NpgsqlCommand(
-                            "DELETE FROM packages WHERE id = @PackageId", conn);
-                        deleteCmd.Parameters.AddWithValue("@PackageId", packageId);
-                        deleteCmd.ExecuteNonQuery();
+                        deckInsertCmd.ExecuteNonQuery();
                     }
 
                     transaction.Commit(); // Commit the transaction
                 }
+                catch (NoPackagesAvailableException)
+                {
+                    transaction.Rollback(); // Rollback the transaction for this specific case
+                    throw; // Re-throw the custom exception to be handled by the caller
+                }
                 catch (Exception ex)
                 {
-                    transaction.Rollback(); // Rollback the transaction in case of an error
+                    transaction.Rollback(); // Rollback the transaction in case of other errors
                     Console.WriteLine($"Error during package acquisition: {ex}");
                     throw; // Re-throw the exception to be handled elsewhere
                 }

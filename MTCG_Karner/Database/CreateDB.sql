@@ -40,11 +40,28 @@ CREATE TABLE IF NOT EXISTS user_cards (
                                           FOREIGN KEY (card_id) REFERENCES cards(id)
 );
 
+CREATE TABLE IF NOT EXISTS decks (
+                                     deck_id   SERIAL PRIMARY KEY,
+                                     user_id   INT NOT NULL,
+                                     card_id1  UUID NOT NULL,
+                                     card_id2  UUID NOT NULL,
+                                     card_id3  UUID NOT NULL,
+                                     card_id4  UUID NOT NULL,
+                                     FOREIGN KEY (user_id) REFERENCES users(id),
+                                     FOREIGN KEY (card_id1) REFERENCES cards(id),
+                                     FOREIGN KEY (card_id2) REFERENCES cards(id),
+                                     FOREIGN KEY (card_id3) REFERENCES cards(id),
+                                     FOREIGN KEY (card_id4) REFERENCES cards(id)
+);
+
+
 
 
 
 --Delete
 
 Delete From Users;
+DELETE FROM decks;
 DELETE FROM packages;
 DELETE FROM cards;
+
