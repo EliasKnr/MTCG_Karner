@@ -2,7 +2,6 @@
 using System.Text;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web; // Required for HttpUtility
 
 namespace MTCG_Karner.Server
 {
@@ -100,11 +99,6 @@ namespace MTCG_Karner.Server
         /// Gets the HTTP payload.
         /// </summary>
         public string Payload { get; protected set; }
-
-        /// <summary>
-        /// Gets the parsed query string as a dictionary.
-        /// </summary>
-        //public Dictionary<string, string> Query { get; protected set; }
 
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // Public Methods                                                                                                   //
@@ -210,23 +204,6 @@ namespace MTCG_Karner.Server
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // Private Methods                                                                                                  //
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        /// <summary>
-        /// Parses the query string into a dictionary.
-        /// </summary>
-        /// <param name="pathAndQuery">The path and query string.</param>
-        /// <returns>A dictionary representing the query string.</returns>
-        private Dictionary<string, string> ParseQueryString(string pathAndQuery)
-        {
-            Dictionary<string, string> query = new Dictionary<string, string>();
-            var queryString = pathAndQuery.Contains("?") ? pathAndQuery.Split('?')[1] : string.Empty;
-            var parsedQuery = HttpUtility.ParseQueryString(queryString);
-            foreach (string key in parsedQuery.AllKeys)
-            {
-                query[key] = parsedQuery[key];
-            }
-
-            return query;
-        }
+        
     }
 }

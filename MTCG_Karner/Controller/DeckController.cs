@@ -36,7 +36,6 @@ public class DeckController
         {
             var user = _transactionRepository.AuthenticateUser(username_iotoken);
             var deck = _cardRepository.GetDeckByUserId(user.Id);
-            Console.WriteLine("### DECK: " + deck);
 
             // Extract format parameter from query string
             bool isPlainFormat = false;
@@ -48,6 +47,7 @@ public class DeckController
             foreach (string param in queryParams)
             {
                 string[] keyValue = param.Split('=');
+                //Console.WriteLine("-Parameter--: " + keyValue[0]);
                 if (keyValue.Length == 2 && keyValue[0] == "format")
                 {
                     isPlainFormat = keyValue[1] == "plain";
