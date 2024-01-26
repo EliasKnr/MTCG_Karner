@@ -76,4 +76,72 @@ public class CardRepository
 
         return userDeck;
     }
+
+
+    //#### own DeckRepo maybe???
+    public void ConfigureDeck(int userId, List<Guid> cardIds)
+    {
+        using (var conn = new NpgsqlConnection(DBAccess.ConnectionString))
+        {
+            conn.Open();
+            using (var transaction = conn.BeginTransaction())
+            {
+                try
+                {
+                    // Check if the user owns the cards
+                    foreach (var cardId in cardIds)
+                    {
+                        var checkOwnershipCmd =
+                            new NpgsqlCommand("SELECT COUNT(*) FROM cards WHERE id = @CardId AND owner_id = @OwnerId",
+                                conn);
+                        checkOwnershipCmd.Parameters.AddWithValue("@CardId", cardId);
+                        checkOwnershipCmd.Parameters.AddWithValue("@OwnerId", userId);
+
+                        long ownershipCount = (long)checkOwnershipCmd.ExecuteScalar();
+                        if (ownershipCount == 0)
+                        {
+                            throw new CardOwnershipException("User does not own one or more specified cards.");
+                        }
+                    }
+
+                    // Delete the current deck (if exists)
+                    var deleteDeckCmd = new NpgsqlCommand("DELETE FROM decks WHERE user_id = @UserId", conn);
+                    deleteDeckCmd.Parameters.AddWithValue("@UserId", userId);
+                    deleteDeckCmd.ExecuteNonQuery();
+
+                    // Insert new deck configuration
+                    var insertDeckCmd =
+                        new NpgsqlCommand(
+                            "INSERT INTO decks (user_id, card_id1, card_id2, card_id3, card_id4) VALUES (@UserId, @CardId1, @CardId2, @CardId3, @CardId4)",
+                            conn);
+                    insertDeckCmd.Parameters.AddWithValue("@UserId", userId);
+                    insertDeckCmd.Parameters.AddWithValue("@CardId1", cardIds[0]);
+                    insertDeckCmd.Parameters.AddWithValue("@CardId2", cardIds[1]);
+                    insertDeckCmd.Parameters.AddWithValue("@CardId3", cardIds[2]);
+                    insertDeckCmd.Parameters.AddWithValue("@CardId4", cardIds[3]);
+                    insertDeckCmd.ExecuteNonQuery();
+
+                    transaction.Commit();
+                }
+                catch (NpgsqlException ex)
+                {
+                    Console.WriteLine($"Database error in ConfigureDeck: {ex.Message}");
+                    transaction.Rollback();
+                    throw;
+                }
+                catch (CardOwnershipException)
+                {
+                    transaction.Rollback();
+                    throw;
+                }
+            }
+        }
+    }
+
+    public class CardOwnershipException : Exception
+    {
+        public CardOwnershipException(string message) : base(message)
+        {
+        }
+    }
 }
