@@ -90,13 +90,13 @@ public class UserController
         {
             var user = _transactionRepository.AuthenticateUser(username);
             var cards = _cardRepository.GetCardsByUserId(user.Id);
-            
+
             if (cards.Count == 0)
             {
                 e.Reply(204, null);
                 return;
             }
-            
+
             string jsonResponse = JsonConvert.SerializeObject(cards);
             e.Reply(200, jsonResponse);
         }
@@ -110,6 +110,76 @@ public class UserController
             e.Reply(500, "Internal Server Error: Could not retrieve cards");
         }
     }
+
+
+    public void GetUser(HttpSvrEventArgs e, string username)
+    {
+        // Fake authentication: extract username from the Authorization header
+        string authHeader = e.Headers.FirstOrDefault(h => h.Name.Equals("Authorization")).Value;
+        string tokenUsername = authHeader?.Split(' ').LastOrDefault()?.Replace("-mtcgToken", "");
+
+        // Verify that the requested username matches the username from the token or is "admin"
+        if (tokenUsername != username && tokenUsername != "admin")
+        {
+            e.Reply(401, "Unauthorized access");
+            return;
+        }
+
+        try
+        {
+            var user = _userRepository.GetUserData(username);
+            if (user != null)
+            {
+                e.Reply(200, JsonConvert.SerializeObject(user));
+            }
+            else
+            {
+                e.Reply(404, "User not found");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in GetUser: {ex}");
+            e.Reply(500, "Internal Server Error");
+        }
+    }
+
+    public void UpdateUser(HttpSvrEventArgs e, string username)
+    {
+        // Fake authentication: extract username from the Authorization header
+        string authHeader = e.Headers.FirstOrDefault(h => h.Name.Equals("Authorization")).Value;
+        string tokenUsername = authHeader?.Split(' ').LastOrDefault()?.Replace("-mtcgToken", "");
+
+        // Verify that the requested username matches the username from the token or is "admin"
+        if (tokenUsername != username && tokenUsername != "admin")
+        {
+            e.Reply(401, "Unauthorized access");
+            return;
+        }
+
+        try
+        {
+            var updatedUserData = JsonConvert.DeserializeObject<UserDataDTO>(e.Payload);
+            if (updatedUserData == null)
+            {
+                e.Reply(400, "Bad request");
+                return;
+            }
+
+            _userRepository.UpdateUserData(username, updatedUserData);
+            e.Reply(200, "User updated successfully");
+        }
+        catch (UserNotFoundException)
+        {
+            e.Reply(404, "User not found");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in UpdateUser: {ex}");
+            e.Reply(500, "Internal Server Error");
+        }
+    }
+
 
     public class UserNotFoundException : Exception
     {
