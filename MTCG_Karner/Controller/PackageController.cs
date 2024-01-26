@@ -3,6 +3,7 @@ using MTCG_Karner.Database.Repository;
 using MTCG_Karner.Server;
 using Newtonsoft.Json;
 using System.Text.RegularExpressions;
+using MTCG_Karner.Models;
 
 namespace MTCG_Karner.Controller;
 
@@ -65,6 +66,25 @@ public class PackageController
         {
             Console.WriteLine($"Error in AcquirePackage: {ex}");
             e.Reply(500, "Internal Server Error: Could not acquire package");
+        }
+    }
+    
+    
+    public void CreatePackage(HttpSvrEventArgs e)
+    {
+        // Deserialize the JSON body to a list of card objects
+        var package = JsonConvert.DeserializeObject<List<Card>>(e.Payload);
+
+        // Call a method in the repository to insert the package into the database
+        try
+        {
+            _packageRepository.CreatePackage(package);
+            e.Reply(201, "Package created successfully");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+            e.Reply(500, "Internal Server Error: Could not create package");
         }
     }
 }

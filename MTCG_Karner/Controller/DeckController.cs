@@ -38,8 +38,22 @@ public class DeckController
             var deck = _cardRepository.GetDeckByUserId(user.Id);
             Console.WriteLine("### DECK: " + deck);
 
-            // Check if query parameter 'format' is 'plain'
-            bool isPlainFormat = e.Query.ContainsKey("format") && e.Query["format"] == "plain";
+            // Extract format parameter from query string
+            bool isPlainFormat = false;
+            string queryString = e.Path.Contains("?") ? e.Path.Split('?')[1] : "";
+
+            // Split the query string into individual key-value pairs
+            string[] queryParams = queryString.Split('&');
+
+            foreach (string param in queryParams)
+            {
+                string[] keyValue = param.Split('=');
+                if (keyValue.Length == 2 && keyValue[0] == "format")
+                {
+                    isPlainFormat = keyValue[1] == "plain";
+                    break;
+                }
+            }
 
 
             if (deck.Count == 0)

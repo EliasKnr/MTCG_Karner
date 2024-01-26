@@ -35,30 +35,36 @@ namespace MTCG_Karner.Server
             PlainMessage = plainMessage;
             Payload = string.Empty;
 
-            // Split the plain message into lines
             string[] lines = plainMessage.Replace("\r\n", "\n").Replace("\r", "\n").Split('\n');
-            bool inHeaders = true;
-            List<HttpHeader> headers = new List<HttpHeader>();
+            bool inheaders = true;
+            List<HttpHeader> headers = new();
 
-            // Process each line
             for (int i = 0; i < lines.Length; i++)
             {
                 if (i == 0)
                 {
-                    // First line contains method and path
                     string[] inc = lines[0].Split(' ');
                     Method = inc[0];
-                    Path = inc[1].Split('?')[0]; // Get path before query string
-                    Query = ParseQueryString(inc[1]);
+                    Path = inc[1];
                 }
-                else if (inHeaders && !string.IsNullOrWhiteSpace(lines[i]))
+                else if (inheaders)
                 {
-                    headers.Add(new HttpHeader(lines[i]));
+                    if (string.IsNullOrWhiteSpace(lines[i]))
+                    {
+                        inheaders = false;
+                    }
+                    else
+                    {
+                        headers.Add(new HttpHeader(lines[i]));
+                    }
                 }
-                else if (!string.IsNullOrWhiteSpace(lines[i]))
+                else
                 {
-                    // Payload starts after headers
-                    if (!string.IsNullOrWhiteSpace(Payload)) Payload += "\n";
+                    if (!string.IsNullOrWhiteSpace(Payload))
+                    {
+                        Payload += "\r\n";
+                    }
+
                     Payload += lines[i];
                 }
             }
@@ -98,7 +104,7 @@ namespace MTCG_Karner.Server
         /// <summary>
         /// Gets the parsed query string as a dictionary.
         /// </summary>
-        public Dictionary<string, string> Query { get; protected set; }
+        //public Dictionary<string, string> Query { get; protected set; }
 
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // Public Methods                                                                                                   //

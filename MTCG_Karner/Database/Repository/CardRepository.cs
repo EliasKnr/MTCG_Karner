@@ -94,6 +94,7 @@ public class CardRepository
                         var checkOwnershipCmd =
                             new NpgsqlCommand("SELECT COUNT(*) FROM cards WHERE id = @CardId AND owner_id = @OwnerId",
                                 conn);
+                        Console.WriteLine("-userID--: " + userId);
                         checkOwnershipCmd.Parameters.AddWithValue("@CardId", cardId);
                         checkOwnershipCmd.Parameters.AddWithValue("@OwnerId", userId);
 

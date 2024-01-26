@@ -68,10 +68,16 @@ public class PackageRepository
             {
                 try
                 {
-                    // Fetch a random package
-                    var selectCmd = new NpgsqlCommand(
+                    // Fetch a random package ### PROBLEM WITH OWNERSIP ###
+                    /*var selectCmd = new NpgsqlCommand(
                         "SELECT id, card_id1, card_id2, card_id3, card_id4, card_id5 FROM packages ORDER BY RANDOM() LIMIT 1",
+                        conn);*/
+                    // ALTERNATIVE
+                    var selectCmd = new NpgsqlCommand(
+                        "SELECT id, card_id1, card_id2, card_id3, card_id4, card_id5 FROM packages LIMIT 1",
                         conn);
+
+                    
                     int packageId;
                     List<Guid> packageCardIds = new List<Guid>(); // List to store card IDs from the package
 

@@ -17,6 +17,7 @@ public class UserController
     public void CreateUser(HttpSvrEventArgs e)
     {
         var user = JsonConvert.DeserializeObject<User>(e.Payload);
+        Console.WriteLine("-P--: " + e.Payload);
         //Console.WriteLine(user.Password);
         try
         {
@@ -65,26 +66,6 @@ public class UserController
     {
         // Placeholder for token generation logic
         return "token_placeholder"; // Adjust for actual token generation
-    }
-
-
-    // ### move to PackageController/Repo
-    public void CreatePackage(HttpSvrEventArgs e)
-    {
-        // Deserialize the JSON body to a list of card objects
-        var package = JsonConvert.DeserializeObject<List<Card>>(e.Payload);
-
-        // Call a method in the repository to insert the package into the database
-        try
-        {
-            _packageRepository.CreatePackage(package);
-            e.Reply(201, "Package created successfully");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex);
-            e.Reply(500, "Internal Server Error: Could not create package");
-        }
     }
 
     public void GetUserCards(HttpSvrEventArgs e)
