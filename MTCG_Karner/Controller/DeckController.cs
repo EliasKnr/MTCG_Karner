@@ -15,11 +15,9 @@ public class DeckController
 
     public void GetDeck(HttpSvrEventArgs e)
     {
-        string authHeader = e.Headers.FirstOrDefault(h => h.Name.Equals("Authorization")).Value;
-
         try
         {
-            var user = _userRepository.AuthenticateUser(authHeader);
+            var user = _userRepository.AuthenticateUser(e);
             var deck = _cardRepository.GetDeckByUserId(user.Id);
 
             // Extract format parameter from query string
@@ -76,11 +74,9 @@ public class DeckController
 
     public void ConfigureDeck(HttpSvrEventArgs e)
     {
-        string authHeader = e.Headers.FirstOrDefault(h => h.Name.Equals("Authorization")).Value;
-
         try
         {
-            var user = _userRepository.AuthenticateUser(authHeader);
+            var user = _userRepository.AuthenticateUser(e);
             var newDeck = JsonConvert.DeserializeObject<List<Guid>>(e.Payload);
 
             if (newDeck == null || newDeck.Count != 4)

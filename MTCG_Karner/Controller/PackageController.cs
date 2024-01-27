@@ -15,11 +15,9 @@ public class PackageController
 
     public void AcquirePackage(HttpSvrEventArgs e)
     {
-        string authHeader = e.Headers.FirstOrDefault(h => h.Name.Equals("Authorization")).Value;
-
         try
         {
-            var user = _userRepository.AuthenticateUser(authHeader);
+            var user = _userRepository.AuthenticateUser(e);
 
             // Check for package availability first without deducting coins
             if (!_packageRepository.IsPackageAvailable())
@@ -60,16 +58,7 @@ public class PackageController
     {
         try
         {
-            // Check for admin role
-            string authHeader = e.Headers.FirstOrDefault(h => h.Name.Equals("Authorization")).Value;
-            if (authHeader == null || !authHeader.StartsWith("Bearer "))
-            {
-                e.Reply(401, "Unauthorized: Missing or invalid authorization token");
-                return;
-            }
-
-            var token = authHeader.Substring("Bearer ".Length).Trim();
-            var user = _userRepository.AuthenticateUser(token);
+            var user = _userRepository.AuthenticateUser(e);
             if (user.Username != "admin")
             {
                 e.Reply(401, "Unauthorized: Only admin can create packages");

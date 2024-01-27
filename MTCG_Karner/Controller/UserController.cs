@@ -1,8 +1,10 @@
+using System.Security.Authentication;
 using System.Text.RegularExpressions;
 using MTCG_Karner.Database.Repository;
 using MTCG_Karner.Models;
 using MTCG_Karner.Server;
 using Newtonsoft.Json;
+using Npgsql;
 
 namespace MTCG_Karner.Controller;
 
@@ -55,7 +57,7 @@ public class UserController
             }
             else
             {
-                e.Reply(401, "Invalid credentials");
+                e.Reply(401, "Invalid username/password provided");
             }
         }
         catch (Exception exception)
@@ -80,11 +82,9 @@ public class UserController
 
     public void GetUserCards(HttpSvrEventArgs e)
     {
-        string authHeader = e.Headers.FirstOrDefault(h => h.Name.Equals("Authorization")).Value;
-
         try
         {
-            var user = _userRepository.AuthenticateUser(authHeader);
+            var user = _userRepository.AuthenticateUser(e);
             var cards = _cardRepository.GetCardsByUserId(user.Id);
 
             if (cards.Count == 0)
@@ -96,16 +96,27 @@ public class UserController
             string jsonResponse = JsonConvert.SerializeObject(cards);
             e.Reply(200, jsonResponse);
         }
-        catch (UserNotFoundException)
+        catch (AuthenticationException)
         {
-            e.Reply(404, "User not found");
+            e.Reply(401, "Access token is missing or invalid");
+        }
+        catch (NpgsqlException ex)
+        {
+            Console.WriteLine($"Database error: {ex}");
+            e.Reply(500, "Internal Server Error: Database operation failed");
+        }
+        catch (FormatException ex)
+        {
+            Console.WriteLine($"Data format error: {ex}");
+            e.Reply(500, "Internal Server Error: Data format issue");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error retrieving cards: {ex}");
-            e.Reply(500, "Internal Server Error: Could not retrieve cards");
+            Console.WriteLine($"Unexpected error: {ex}");
+            e.Reply(500, "Internal Server Error: Unexpected problem");
         }
     }
+
 
 
     public void GetUser(HttpSvrEventArgs e)

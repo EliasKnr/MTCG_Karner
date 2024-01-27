@@ -1,6 +1,7 @@
 using System.Security.Authentication;
 using MTCG_Karner.Controller;
 using MTCG_Karner.Models;
+using MTCG_Karner.Server;
 using Npgsql;
 
 namespace MTCG_Karner.Database.Repository;
@@ -32,15 +33,32 @@ public class UserRepository
             }
         }
     }
-    
-    
+
+
     //GetUserFromAuthHeader
-    public User AuthenticateUser(string authHeader)
+    public User AuthenticateUser(HttpSvrEventArgs e)
     {
-        string token = authHeader?.Split(' ').LastOrDefault();
+        // Check for the presence of the event argument and the headers
+        if (e == null || e.Headers == null)
+        {
+            throw new AuthenticationException("Access token is missing or invalid");
+        }
+
+        // Try to find the Authorization header
+        string authHeader = e.Headers.FirstOrDefault(h => h.Name.Equals("Authorization"))?.Value;
+
+        // If the Authorization header is not found or does not contain the expected bearer token, throw an exception
+        if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer "))
+        {
+            throw new AuthenticationException("Access token is missing or invalid");
+        }
+
+        // Extract the token part after "Bearer "
+        string token = authHeader.Substring("Bearer ".Length).Trim();
+
         // Extract the username part from the token
         string username = token.Replace("-mtcgToken", "");
-        
+
         if (string.IsNullOrEmpty(username))
         {
             throw new AuthenticationException("Access token is missing or invalid");
@@ -84,7 +102,8 @@ public class UserRepository
             }
         }
     }
-    
+
+
     //for LoginUser
     public User GetUserByUsername(string username)
     {
