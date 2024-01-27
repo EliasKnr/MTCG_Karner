@@ -49,17 +49,7 @@ namespace MTCG_Karner
             }
             else if (e.Path.StartsWith("/packages") && e.Method.Equals("POST"))
             {
-                // Here you should check the Authorization header value
-                string authHeader = e.Headers.FirstOrDefault(h => h.Name.Equals("Authorization")).Value;
-                if (authHeader == "Bearer admin-mtcgToken") // ### replace with real token validation
-                {
-                    // Call the method to handle package creation
                     _packageController.CreatePackage(e);
-                }
-                else
-                {
-                    e.Reply(403, "Forbidden: Invalid token");
-                }
             }
             else if (e.Path.StartsWith("/transactions/packages") && e.Method.Equals("POST"))
             {
@@ -81,9 +71,7 @@ namespace MTCG_Karner
             }
             else if (e.Path.StartsWith("/users/") && e.Method.Equals("GET"))
             {
-                //### does this change when implementing token?
-                var username = e.Path.Split('/')[2];
-                _userController.GetUser(e, username);
+                _userController.GetUser(e);
             }
             else if (e.Path.StartsWith("/users/") && e.Method.Equals("PUT"))
             {

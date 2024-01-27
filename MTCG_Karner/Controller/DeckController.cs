@@ -10,31 +10,16 @@ namespace MTCG_Karner.Controller;
 
 public class DeckController
 {
-    private TransactionRepository _transactionRepository = new TransactionRepository();
+    private UserRepository _userRepository = new UserRepository();
     private CardRepository _cardRepository = new CardRepository();
 
     public void GetDeck(HttpSvrEventArgs e)
     {
         string authHeader = e.Headers.FirstOrDefault(h => h.Name.Equals("Authorization")).Value;
-        string token = authHeader?.Split(' ').LastOrDefault();
-
-        string pattern = @"^([^-]+)-mtcgToken$";
-        string username_iotoken = "failed";
-        Match match = Regex.Match(token, pattern);
-
-        if (match.Success)
-        {
-            username_iotoken = match.Groups[1].Value;
-        }
-        else
-        {
-            e.Reply(401, "Access token is missing or invalid");
-            return;
-        }
 
         try
         {
-            var user = _transactionRepository.AuthenticateUser(username_iotoken);
+            var user = _userRepository.AuthenticateUser(authHeader);
             var deck = _cardRepository.GetDeckByUserId(user.Id);
 
             // Extract format parameter from query string
@@ -68,7 +53,7 @@ public class DeckController
         }
         catch (AuthenticationException)
         {
-            e.Reply(401, "Authentication failed.");
+            e.Reply(401, "Access token is missing or invalid");
         }
         catch (NpgsqlException ex)
         {
@@ -92,21 +77,10 @@ public class DeckController
     public void ConfigureDeck(HttpSvrEventArgs e)
     {
         string authHeader = e.Headers.FirstOrDefault(h => h.Name.Equals("Authorization")).Value;
-        string token = authHeader?.Split(' ').LastOrDefault();
-        string pattern = @"^([^-]+)-mtcgToken$";
-        Match match = Regex.Match(token, pattern);
-
-        if (!match.Success)
-        {
-            e.Reply(401, "Access token is missing or invalid");
-            return;
-        }
-
-        string username = match.Groups[1].Value;
 
         try
         {
-            var user = _transactionRepository.AuthenticateUser(username);
+            var user = _userRepository.AuthenticateUser(authHeader);
             var newDeck = JsonConvert.DeserializeObject<List<Guid>>(e.Payload);
 
             if (newDeck == null || newDeck.Count != 4)

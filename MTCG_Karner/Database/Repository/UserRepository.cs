@@ -1,3 +1,4 @@
+using System.Security.Authentication;
 using MTCG_Karner.Controller;
 using MTCG_Karner.Models;
 using Npgsql;
@@ -31,7 +32,60 @@ public class UserRepository
             }
         }
     }
+    
+    
+    //GetUserFromAuthHeader
+    public User AuthenticateUser(string authHeader)
+    {
+        string token = authHeader?.Split(' ').LastOrDefault();
+        // Extract the username part from the token
+        string username = token.Replace("-mtcgToken", "");
+        
+        if (string.IsNullOrEmpty(username))
+        {
+            throw new AuthenticationException("Access token is missing or invalid");
+        }
 
+        string query = "SELECT * FROM users WHERE username = @Username";
+
+        using (var conn = new NpgsqlConnection(DBAccess.ConnectionString))
+        using (var cmd = new NpgsqlCommand(query, conn))
+        {
+            try
+            {
+                cmd.Parameters.AddWithValue("@Username", username);
+                conn.Open();
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (!reader.Read())
+                    {
+                        throw new AuthenticationException("Authentication failed. User not found.");
+                    }
+
+                    return new User
+                    {
+                        Id = int.Parse(reader["id"].ToString()),
+                        Username = reader["username"].ToString(),
+                        Coins = int.Parse(reader["coins"].ToString())
+                        // Populate other fields as necessary
+                    };
+                }
+            }
+            catch (NpgsqlException ex)
+            {
+                Console.WriteLine($"Database error when authenticating user: {ex.Message}");
+                throw;
+            }
+            catch (FormatException ex)
+            {
+                Console.WriteLine($"Data format error when reading user data: {ex.Message}");
+                throw;
+            }
+        }
+    }
+    
+    //for LoginUser
     public User GetUserByUsername(string username)
     {
         User user = null;

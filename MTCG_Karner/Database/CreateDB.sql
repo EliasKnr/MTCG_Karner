@@ -63,9 +63,7 @@ CREATE TABLE IF NOT EXISTS decks (
 
 
 
---Delete
-
-
+--Delete <3
 DELETE FROM decks;
 DELETE FROM packages;
 DELETE FROM cards;

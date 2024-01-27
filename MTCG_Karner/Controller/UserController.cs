@@ -16,11 +16,21 @@ public class UserController
 
     public void CreateUser(HttpSvrEventArgs e)
     {
-        var user = JsonConvert.DeserializeObject<User>(e.Payload);
-        Console.WriteLine("-P--: " + e.Payload);
-        //Console.WriteLine(user.Password);
+        var userDto =
+            JsonConvert.DeserializeObject<UserDTO>(e
+                .Payload); // Assuming you have a DTO that includes username and password
+
         try
         {
+            // Hash the password before saving to the database
+            string hashedPassword = BCrypt.Net.BCrypt.HashPassword(userDto.Password);
+            User user = new User
+            {
+                Username = userDto.Username,
+                Password = hashedPassword
+                // Add other fields as necessary
+            };
+
             _userRepository.CreateUser(user);
             e.Reply(201, "User Created");
         }
@@ -40,8 +50,7 @@ public class UserController
             var user = _userRepository.GetUserByUsername(loginRequest.Username);
             if (user != null && VerifyPassword(loginRequest.Password, user.Password))
             {
-                // Placeholder for when you implement actual token generation
-                var token = GenerateToken(user);
+                var token = GenerateToken(user.Username);
                 e.Reply(200, JsonConvert.SerializeObject(new { token = token }));
             }
             else
@@ -58,37 +67,24 @@ public class UserController
 
     private bool VerifyPassword(string providedPassword, string storedPassword)
     {
-        // Placeholder for password verification logic
-        return providedPassword == storedPassword; // Adjust for actual password verification
+        // Use bcrypt to verify the hashed password
+        return BCrypt.Net.BCrypt.Verify(providedPassword, storedPassword);
     }
 
-    private string GenerateToken(User user)
+    private string GenerateToken(string username)
     {
-        // Placeholder for token generation logic
-        return "token_placeholder"; // Adjust for actual token generation
+        // Simple token generation
+        return $"{username}-mtcgToken";
     }
+
 
     public void GetUserCards(HttpSvrEventArgs e)
     {
         string authHeader = e.Headers.FirstOrDefault(h => h.Name.Equals("Authorization")).Value;
-        string token = authHeader?.Split(' ').LastOrDefault();
-
-        // ### TOKEN BITTE
-        // Extract username from token, replace with actual token validation later
-        string pattern = @"^([^-]+)-mtcgToken$";
-        string username = "failed";
-        Match match = Regex.Match(token, pattern);
-        if (!match.Success)
-        {
-            e.Reply(401, "Unauthorized: Token is missing or invalid");
-            return;
-        }
-
-        username = match.Groups[1].Value;
 
         try
         {
-            var user = _transactionRepository.AuthenticateUser(username);
+            var user = _userRepository.AuthenticateUser(authHeader);
             var cards = _cardRepository.GetCardsByUserId(user.Id);
 
             if (cards.Count == 0)
@@ -112,9 +108,9 @@ public class UserController
     }
 
 
-    public void GetUser(HttpSvrEventArgs e, string username)
+    public void GetUser(HttpSvrEventArgs e)
     {
-        // Fake authentication: extract username from the Authorization header
+        var username = e.Path.Split('/')[2];
         string authHeader = e.Headers.FirstOrDefault(h => h.Name.Equals("Authorization")).Value;
         string tokenUsername = authHeader?.Split(' ').LastOrDefault()?.Replace("-mtcgToken", "");
 

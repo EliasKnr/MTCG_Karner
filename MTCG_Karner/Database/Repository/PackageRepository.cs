@@ -1,10 +1,13 @@
+using System.Security.Authentication;
 using MTCG_Karner.Models;
+using MTCG_Karner.Server;
 using Npgsql;
 
 namespace MTCG_Karner.Database.Repository;
 
 public class PackageRepository
 {
+    private UserRepository _userRepository = new UserRepository();
     public void CreatePackage(List<Card> packageCards)
     {
         if (packageCards.Count != 5)

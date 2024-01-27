@@ -10,30 +10,16 @@ namespace MTCG_Karner.Controller;
 public class PackageController
 {
     private TransactionRepository _transactionRepository = new TransactionRepository();
+    private UserRepository _userRepository = new UserRepository();
     private PackageRepository _packageRepository = new PackageRepository();
 
     public void AcquirePackage(HttpSvrEventArgs e)
     {
         string authHeader = e.Headers.FirstOrDefault(h => h.Name.Equals("Authorization")).Value;
-        string token = authHeader?.Split(' ').LastOrDefault();
-
-        string pattern = @"^([^-]+)-mtcgToken$";
-        string username_iotoken = "failed";
-        Match match = Regex.Match(token, pattern);
-
-        if (match.Success)
-        {
-            username_iotoken = match.Groups[1].Value;
-        }
-        else
-        {
-            e.Reply(401, "Access token is missing or invalid");
-            return;
-        }
 
         try
         {
-            var user = _transactionRepository.AuthenticateUser(username_iotoken);
+            var user = _userRepository.AuthenticateUser(authHeader);
 
             // Check for package availability first without deducting coins
             if (!_packageRepository.IsPackageAvailable())
@@ -56,7 +42,7 @@ public class PackageController
         }
         catch (AuthenticationException)
         {
-            e.Reply(401, "Authentication failed.");
+            e.Reply(401, "Access token is missing or invalid");
         }
         catch (NoPackagesAvailableException)
         {
@@ -68,18 +54,44 @@ public class PackageController
             e.Reply(500, "Internal Server Error: Could not acquire package");
         }
     }
-    
-    
+
+
     public void CreatePackage(HttpSvrEventArgs e)
     {
-        // Deserialize the JSON body to a list of card objects
-        var package = JsonConvert.DeserializeObject<List<Card>>(e.Payload);
-
-        // Call a method in the repository to insert the package into the database
         try
         {
+            // Check for admin role
+            string authHeader = e.Headers.FirstOrDefault(h => h.Name.Equals("Authorization")).Value;
+            if (authHeader == null || !authHeader.StartsWith("Bearer "))
+            {
+                e.Reply(401, "Unauthorized: Missing or invalid authorization token");
+                return;
+            }
+
+            var token = authHeader.Substring("Bearer ".Length).Trim();
+            var user = _userRepository.AuthenticateUser(token);
+            if (user.Username != "admin")
+            {
+                e.Reply(401, "Unauthorized: Only admin can create packages");
+                return;
+            }
+
+            // Deserialize the JSON body to a list of card objects
+            var package = JsonConvert.DeserializeObject<List<Card>>(e.Payload);
             _packageRepository.CreatePackage(package);
             e.Reply(201, "Package created successfully");
+        }
+        catch (JsonSerializationException)
+        {
+            e.Reply(400, "Bad Request: Invalid package format");
+        }
+        catch (ArgumentException ex)
+        {
+            e.Reply(400, $"Bad Request: {ex.Message}");
+        }
+        catch (AuthenticationException ex)
+        {
+            e.Reply(401, $"Unauthorized: {ex.Message}");
         }
         catch (Exception ex)
         {
