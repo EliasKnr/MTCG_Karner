@@ -49,7 +49,7 @@ namespace MTCG_Karner
             }
             else if (e.Path.StartsWith("/packages") && e.Method.Equals("POST"))
             {
-                    _packageController.CreatePackage(e);
+                _packageController.CreatePackage(e);
             }
             else if (e.Path.StartsWith("/transactions/packages") && e.Method.Equals("POST"))
             {
@@ -77,6 +77,10 @@ namespace MTCG_Karner
             {
                 var username = e.Path.Split('/')[2];
                 _userController.UpdateUser(e, username);
+            }
+            else if (e.Path.Equals("/stats") && e.Method.Equals("GET"))
+            {
+                _userController.GetStats(e);
             }
 
 

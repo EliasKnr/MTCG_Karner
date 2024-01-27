@@ -11,6 +11,11 @@ ALTER TABLE users
     ADD COLUMN name VARCHAR(255),
     ADD COLUMN bio TEXT,
     ADD COLUMN image TEXT;
+ALTER TABLE users
+    ADD COLUMN wins INT DEFAULT 0,
+    ADD COLUMN losses INT DEFAULT 0,
+    ADD COLUMN games_played INT DEFAULT 0;
+
 
 
 

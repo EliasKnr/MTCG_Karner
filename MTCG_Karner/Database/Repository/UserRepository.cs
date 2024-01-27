@@ -198,45 +198,34 @@ public class UserRepository
         }
     }
 
-    //Baustelle - Doch in TransactionRepo
-    /*
-    public User AuthenticateUser(string username)
+    public UserStats GetUserStats(int userId)
     {
-        User user = null;
-        string query = "SELECT * FROM users WHERE username = @username";
-        using (NpgsqlConnection conn = new NpgsqlConnection(DBAccess.ConnectionString))
-        using (NpgsqlCommand cmd = new NpgsqlCommand(query, conn))
+        var query = "SELECT wins, losses, games_played FROM users WHERE id = @UserId";
+        using (var conn = new NpgsqlConnection(DBAccess.ConnectionString))
         {
-            try
+            conn.Open();
+            using (var cmd = new NpgsqlCommand(query, conn))
             {
-                conn.Open();
-                cmd.Parameters.AddWithValue("@username", username);
+                cmd.Parameters.AddWithValue("@UserId", userId);
 
                 using (var reader = cmd.ExecuteReader())
                 {
                     if (reader.Read())
                     {
-                        user = new User
+                        return new UserStats
                         {
-                            Username = reader["username"].ToString(),
-                            Password = reader["password"].ToString(),
-                            Coins = int.Parse(reader["coins"].ToString()),
-                            // Map other yow
+                            Wins = reader.GetInt32(reader.GetOrdinal("wins")),
+                            Losses = reader.GetInt32(reader.GetOrdinal("losses")),
+                            GamesPlayed = reader.GetInt32(reader.GetOrdinal("games_played")),
                         };
+                    }
+                    else
+                    {
+                        throw new UserController.UserNotFoundException("User not found.");
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error authenticating user by username: {ex.Message}");
-                throw;
-            }
-            finally
-            {
-                conn.Close();
-            }
         }
-        return user;
     }
-    */
+
 }

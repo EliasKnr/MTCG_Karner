@@ -118,7 +118,6 @@ public class UserController
     }
 
 
-
     public void GetUser(HttpSvrEventArgs e)
     {
         var username = e.Path.Split('/')[2];
@@ -128,7 +127,7 @@ public class UserController
         // Verify that the requested username matches the username from the token or is "admin"
         if (tokenUsername != username && tokenUsername != "admin")
         {
-            e.Reply(401, "Unauthorized access");
+            e.Reply(401, "Access token is missing or invalid");
             return;
         }
 
@@ -160,7 +159,7 @@ public class UserController
         // Verify that the requested username matches the username from the token or is "admin"
         if (tokenUsername != username && tokenUsername != "admin")
         {
-            e.Reply(401, "Unauthorized access");
+            e.Reply(401, "Access token is missing or invalid");
             return;
         }
 
@@ -184,6 +183,35 @@ public class UserController
         {
             Console.WriteLine($"Error in UpdateUser: {ex}");
             e.Reply(500, "Internal Server Error");
+        }
+    }
+
+    public void GetStats(HttpSvrEventArgs e)
+    {
+        try
+        {
+            var user = _userRepository.AuthenticateUser(e);
+            var stats = _userRepository.GetUserStats(user.Id);
+
+            e.Reply(200, JsonConvert.SerializeObject(stats));
+        }
+        catch (AuthenticationException)
+        {
+            e.Reply(401, "Access token is missing or invalid");
+        }
+        catch (NpgsqlException ex)
+        {
+            Console.WriteLine($"Database error: {ex.Message}");
+            e.Reply(500, "Internal Server Error: Database operation failed");
+        }
+        catch (UserNotFoundException)
+        {
+            e.Reply(404, "User not found");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error retrieving stats: {ex}");
+            e.Reply(500, "Internal Server Error: Could not retrieve stats");
         }
     }
 
