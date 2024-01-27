@@ -1,4 +1,5 @@
-﻿using MTCG_Karner.Controller;
+﻿using MTCG_Karner.Battle;
+using MTCG_Karner.Controller;
 using MTCG_Karner.Server;
 
 namespace MTCG_Karner
@@ -28,7 +29,8 @@ namespace MTCG_Karner
             UserController _userController = new UserController();
             PackageController _packageController = new PackageController();
             DeckController _deckController = new DeckController();
-
+            BattleController _battleController = new BattleController();
+            
             Console.WriteLine("-theWay: " + e.Path);
 
             if (e.Path.StartsWith("/users") && e.Method.Equals("POST"))
@@ -82,10 +84,13 @@ namespace MTCG_Karner
             {
                 _userController.GetStats(e);
             }
-
+            else if (e.Path.Equals("/battles") && e.Method.Equals("POST"))
+            {
+                _battleController.HandleBattleRequest(e);
+            }
 
             //Console.WriteLine(e.PlainMessage);
-            //e.Reply(200, "Yo! Understood.");
+            //e.Reply(200, "Yo! Understood, Bra.");
         }
     }
 }

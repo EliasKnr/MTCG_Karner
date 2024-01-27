@@ -228,4 +228,38 @@ public class UserRepository
         }
     }
 
+    public void UpdateUserStats(int userId, int eloChange, int winsChange, int lossesChange)
+    {
+        try
+        {
+            string query = @"
+    UPDATE users
+    SET elo = CASE
+                WHEN elo + @EloChange < 0 THEN 0
+                ELSE elo + @EloChange
+              END,
+        wins = wins + @WinsChange,
+        losses = losses + @LossesChange,
+        games_played = games_played + 1
+    WHERE id = @UserId";
+
+            using (var conn = new NpgsqlConnection(DBAccess.ConnectionString))
+            using (var cmd = new NpgsqlCommand(query, conn))
+            {
+                cmd.Parameters.AddWithValue("@UserId", userId);
+                cmd.Parameters.AddWithValue("@EloChange", eloChange);
+                cmd.Parameters.AddWithValue("@WinsChange", winsChange);
+                cmd.Parameters.AddWithValue("@LossesChange", lossesChange);
+
+                conn.Open();
+                cmd.ExecuteNonQuery();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating user stats: {ex.Message}");
+            throw;
+        }
+        Console.WriteLine("-B-UpdatedUserStats-" + userId);
+    }
 }

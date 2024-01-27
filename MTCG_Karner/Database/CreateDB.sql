@@ -15,6 +15,7 @@ ALTER TABLE users
     ADD COLUMN wins INT DEFAULT 0,
     ADD COLUMN losses INT DEFAULT 0,
     ADD COLUMN games_played INT DEFAULT 0;
+ALTER TABLE users ADD COLUMN elo INT DEFAULT 100;
 
 
 
@@ -52,11 +53,11 @@ CREATE TABLE IF NOT EXISTS user_cards (
 
 CREATE TABLE IF NOT EXISTS decks (
                                      deck_id   SERIAL PRIMARY KEY,
-                                     user_id   INT NOT NULL,
-                                     card_id1  UUID NOT NULL,
-                                     card_id2  UUID NOT NULL,
-                                     card_id3  UUID NOT NULL,
-                                     card_id4  UUID NOT NULL,
+                                     user_id   INT,
+                                     card_id1  UUID,
+                                     card_id2  UUID,
+                                     card_id3  UUID,
+                                     card_id4  UUID,
                                      FOREIGN KEY (user_id) REFERENCES users(id),
                                      FOREIGN KEY (card_id1) REFERENCES cards(id),
                                      FOREIGN KEY (card_id2) REFERENCES cards(id),
@@ -73,4 +74,5 @@ DELETE FROM decks;
 DELETE FROM packages;
 DELETE FROM cards;
 Delete From Users;
+DROP TABLE decks;
 
