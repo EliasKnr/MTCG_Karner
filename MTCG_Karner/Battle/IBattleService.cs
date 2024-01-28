@@ -93,7 +93,7 @@ public class BattleService : IBattleService
         // Transfer the defeated cards to the winner and update stats
         if (battleWinner != null && battleLoser != null)
         {
-            TransferDefeatedCards(battleWinner, battleLoser);
+            TransferDefeatedCards(battleWinner, battleLoser, defeatedCardIds);
             UpdateStats(battleWinner, battleLoser);
             LogBattleResult(battleWinner, battleLoser);
         }
@@ -125,11 +125,33 @@ public class BattleService : IBattleService
     }
 
 
-    private void TransferDefeatedCards(User winner, User loser)
+    public void TransferDefeatedCards(User winner, User loser, List<Guid> defeatedCardIds)
     {
-        // Implement the logic to transfer defeated cards to the winner
-        // and refill the loser's deck with the next strongest cards
+        Console.WriteLine("-B-TransferDefeatedCards");
+
+        var loserDeckCardIds = _cardRepository.GetDeckByUserId(loser.Id)
+            .Select(card => card.Id)
+            .ToHashSet();
+
+        foreach (var cardId in defeatedCardIds)
+        {
+            // Ensure the card is in the loser's deck and was defeated
+            if (loserDeckCardIds.Contains(cardId))
+            {
+                _cardRepository.RemoveCardFromDeck(loser.Id, cardId);
+                _cardRepository.TransferCardOwnership(cardId, winner.Id);
+            }
+        }
+
+        _cardRepository.RefillUserDeck(loser.Id);
+        var winnerCards = _cardRepository.GetCardsByUserId(winner.Id);
+        var loserCards = _cardRepository.GetCardsByUserId(loser.Id);
+        Console.WriteLine($"Winner {winner.Username} now has {winnerCards.Count} cards.");
+        _battleLog.AppendLine($"Winner {winner.Username} now possesses {winnerCards.Count} cards.");
+        Console.WriteLine($"{loser.Username} now has {loserCards.Count} cards.");
+        _battleLog.AppendLine($"{loser.Username} now possesses {loserCards.Count} cards.");
     }
+
 
     private void LogRoundResult(int roundNumber, User winner, Card card1, Card card2)
     {

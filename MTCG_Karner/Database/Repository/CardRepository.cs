@@ -80,15 +80,28 @@ public class CardRepository
 
     public int GetDeckSizeByUserId(int userId)
     {
-        string query = "SELECT SUM(CASE WHEN card_id1 IS NULL THEN 1 ELSE 0 END + CASE WHEN card_id2 IS NULL THEN 1 ELSE 0 END + CASE WHEN card_id3 IS NULL THEN 1 ELSE 0 END + CASE WHEN card_id4 IS NULL THEN 1 ELSE 0 END) AS NullCount FROM decks WHERE user_id = @UserId";
+        string query = @"
+        SELECT SUM(
+            CASE WHEN card_id1 IS NOT NULL THEN 1 ELSE 0 END +
+            CASE WHEN card_id2 IS NOT NULL THEN 1 ELSE 0 END +
+            CASE WHEN card_id3 IS NOT NULL THEN 1 ELSE 0 END +
+            CASE WHEN card_id4 IS NOT NULL THEN 1 ELSE 0 END
+        ) AS CardCount 
+        FROM decks 
+        WHERE user_id = @UserId";
+
         using (var conn = new NpgsqlConnection(DBAccess.ConnectionString))
         using (var cmd = new NpgsqlCommand(query, conn))
         {
             cmd.Parameters.AddWithValue("@UserId", userId);
             conn.Open();
-            int missing_cards = Convert.ToInt32(cmd.ExecuteScalar());
-            int card_cnt = 4 - missing_cards;
-            return card_cnt;
+            var result = cmd.ExecuteScalar();
+
+            // Handle cases where the user might not have a deck yet
+            if (result is DBNull)
+                return 0;
+
+            return Convert.ToInt32(result);
         }
     }
 
@@ -153,6 +166,127 @@ public class CardRepository
             }
         }
     }
+
+    public void RemoveCardFromDeck(int userId, Guid cardId)
+    {
+        Console.WriteLine("-RemoveCardFromDeck");
+        string[] cardSlots = { "card_id1", "card_id2", "card_id3", "card_id4" };
+
+        using (var conn = new NpgsqlConnection(DBAccess.ConnectionString))
+        {
+            conn.Open();
+            foreach (var slot in cardSlots)
+            {
+                var query = $"UPDATE decks SET {slot} = NULL WHERE user_id = @UserId AND {slot} = @CardId";
+                using (var cmd = new NpgsqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@UserId", userId);
+                    cmd.Parameters.AddWithValue("@CardId", cardId);
+                    if (cmd.ExecuteNonQuery() > 0)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+
+    public void TransferCardOwnership(Guid cardId, int newOwnerId)
+    {
+        Console.WriteLine("-TransferCardOwnership");
+
+        string query = "UPDATE cards SET owner_id = @NewOwnerId WHERE id = @CardId";
+        using (var conn = new NpgsqlConnection(DBAccess.ConnectionString))
+        using (var cmd = new NpgsqlCommand(query, conn))
+        {
+            cmd.Parameters.AddWithValue("@NewOwnerId", newOwnerId);
+            cmd.Parameters.AddWithValue("@CardId", cardId);
+
+            conn.Open();
+            cmd.ExecuteNonQuery();
+        }
+    }
+
+    public void RefillUserDeck(int userId)
+    {
+        Console.WriteLine("-RefillUserDeck");
+        var deck = GetDeckSizeByUserId(userId);
+        Console.WriteLine("-RefillUserDeck-DeckSize: " + deck);
+        int cardsNeeded = 4 - deck;
+        Console.WriteLine("-RefillUserDeck-CardsNeeded: " + cardsNeeded);
+        if (cardsNeeded > 0)
+        {
+            var availableCards = GetCardsByUserId(userId);
+            Console.WriteLine("-RefillUserDeck-AvailableCards: " + availableCards);
+            if (availableCards.Count < cardsNeeded)
+            {
+                Console.WriteLine(
+                    $"User {userId} does not have enough cards to refill the deck. Please acquire more cards. (Only {availableCards.Count})");
+                return;
+            }
+
+            var selectedCards = availableCards.OrderBy(x => Guid.NewGuid()).Take(cardsNeeded).ToList();
+            AddCardsToDeck(userId, selectedCards.Select(card => card.Id));
+        }
+    }
+
+    public void AddCardsToDeck(int userId, IEnumerable<Guid> cardIds)
+    {
+        var deck = GetDeckByUserId(userId);
+
+        foreach (var cardId in cardIds)
+        {
+            if (deck.Count < 4)
+            {
+                string slot = $"card_id{deck.Count + 1}";
+                string query = $"UPDATE decks SET {slot} = @CardId WHERE user_id = @UserId";
+
+                using (var conn = new NpgsqlConnection(DBAccess.ConnectionString))
+                using (var cmd = new NpgsqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@UserId", userId);
+                    cmd.Parameters.AddWithValue("@CardId", cardId);
+
+                    conn.Open();
+                    cmd.ExecuteNonQuery();
+                }
+
+                deck.Add(new Card { Id = cardId }); // Assuming Card class has an Id property
+            }
+            else
+            {
+                break; // The deck is already full
+            }
+        }
+    }
+
+
+    /*
+    public void TransferCardOwnership(Guid cardId, int newOwnerId)
+    {
+        string queryOwnership = "UPDATE cards SET owner_id = @NewOwnerId WHERE id = @CardId";
+        string queryDeckRemoval = "DELETE FROM deck WHERE card_id = @CardId";
+
+        using (var conn = new NpgsqlConnection(DBAccess.ConnectionString))
+        {
+            conn.Open();
+
+            using (var cmdOwnership = new NpgsqlCommand(queryOwnership, conn))
+            {
+                cmdOwnership.Parameters.AddWithValue("@NewOwnerId", newOwnerId);
+                cmdOwnership.Parameters.AddWithValue("@CardId", cardId);
+                cmdOwnership.ExecuteNonQuery();
+            }
+
+            using (var cmdDeckRemoval = new NpgsqlCommand(queryDeckRemoval, conn))
+            {
+                cmdDeckRemoval.Parameters.AddWithValue("@CardId", cardId);
+                cmdDeckRemoval.ExecuteNonQuery();
+            }
+        }
+    }*/
+
 
     public class CardOwnershipException : Exception
     {

@@ -43,7 +43,7 @@ public class BattleLobby
             var deckSize = _cardRepository.GetDeckSizeByUserId(user.Id);
             if (deckSize != 4)
             {
-                Console.WriteLine($"-B-{user.Username}(ID:{user.Id})-does not have a valid deck");
+                Console.WriteLine($"-B-{user.Username}(ID:{user.Id})-does not have a valid deck (only " + deckSize + " cards)");
                 throw new NoValidDeckException($"{user.Username} does not have a valid deck of exactly 4 cards.");
             }
 

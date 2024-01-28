@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS decks (
                                      FOREIGN KEY (card_id4) REFERENCES cards(id)
 );
 
-
+SELECT COUNT(*) FROM cards WHERE cards.owner_id = 91;
 
 
 
