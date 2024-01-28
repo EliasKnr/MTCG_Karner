@@ -1,5 +1,4 @@
 using System.Security.Authentication;
-using System.Text.RegularExpressions;
 using MTCG_Karner.Database.Repository;
 using MTCG_Karner.Models;
 using MTCG_Karner.Server;
@@ -192,6 +191,7 @@ public class UserController
         {
             var user = _userRepository.AuthenticateUser(e);
             var stats = _userRepository.GetUserStats(user.Id);
+            Console.WriteLine(stats.Elo);
 
             e.Reply(200, JsonConvert.SerializeObject(stats));
         }

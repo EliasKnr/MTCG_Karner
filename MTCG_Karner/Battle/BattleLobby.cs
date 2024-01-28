@@ -1,3 +1,4 @@
+using MTCG_Karner.Database.Repository;
 using MTCG_Karner.Models;
 
 namespace MTCG_Karner.Battle;
@@ -9,6 +10,8 @@ public class BattleLobby
     private readonly IBattleService _battleService;
     private static BattleLobby _instance;
     private static readonly object _instanceLock = new object();
+    private CardRepository _cardRepository = new CardRepository();
+
 
     private BattleLobby(IBattleService battleService)
     {
@@ -36,6 +39,14 @@ public class BattleLobby
         Console.WriteLine($"-B-{user.Username}(ID:{user.Id})-TryingtoJoinLobby");
         lock (_lock)
         {
+            Console.WriteLine("-B-AntiCheat-CheckingDeck");
+            var deckSize = _cardRepository.GetDeckSizeByUserId(user.Id);
+            if (deckSize != 4)
+            {
+                Console.WriteLine($"-B-{user.Username}(ID:{user.Id})-does not have a valid deck");
+                throw new NoValidDeckException($"{user.Username} does not have a valid deck of exactly 4 cards.");
+            }
+
             if (_waitingUsers.Any(u => u.Id == user.Id))
             {
                 Console.WriteLine($"-B-{user.Username} already in the lobby");
@@ -47,6 +58,7 @@ public class BattleLobby
             return true;
         }
     }
+
 
     public void CheckForBattle()
     {
@@ -80,5 +92,12 @@ public class BattleLobby
         {
             Console.WriteLine($"Unexpected error during battle: {ex.Message}");
         }
+    }
+}
+
+public class NoValidDeckException : Exception
+{
+    public NoValidDeckException(string message) : base(message)
+    {
     }
 }

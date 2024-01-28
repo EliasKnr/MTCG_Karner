@@ -242,7 +242,7 @@ pause
 
 REM --------------------------------------------------
 echo 16) scoreboard
-curl -i -X GET http://localhost:10001/scoreboard --header "Authorization: Bearer kienboec-mtcgToken"
+echo curl -i -X GET http://localhost:10001/scoreboard --header "Authorization: Bearer kienboec-mtcgToken"
 echo.
 echo.
 

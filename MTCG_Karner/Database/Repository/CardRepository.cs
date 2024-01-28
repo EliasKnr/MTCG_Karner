@@ -78,6 +78,20 @@ public class CardRepository
         return userDeck;
     }
 
+    public int GetDeckSizeByUserId(int userId)
+    {
+        string query = "SELECT SUM(CASE WHEN card_id1 IS NULL THEN 1 ELSE 0 END + CASE WHEN card_id2 IS NULL THEN 1 ELSE 0 END + CASE WHEN card_id3 IS NULL THEN 1 ELSE 0 END + CASE WHEN card_id4 IS NULL THEN 1 ELSE 0 END) AS NullCount FROM decks WHERE user_id = @UserId";
+        using (var conn = new NpgsqlConnection(DBAccess.ConnectionString))
+        using (var cmd = new NpgsqlCommand(query, conn))
+        {
+            cmd.Parameters.AddWithValue("@UserId", userId);
+            conn.Open();
+            int missing_cards = Convert.ToInt32(cmd.ExecuteScalar());
+            int card_cnt = 4 - missing_cards;
+            return card_cnt;
+        }
+    }
+
 
     //#### own DeckRepo maybe???
     public void ConfigureDeck(int userId, List<Guid> cardIds)

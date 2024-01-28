@@ -37,6 +37,11 @@ public class BattleController
                 e.Reply(409, "Could not join the lobby"); // or another appropriate status code
             }
         }
+        catch(NoValidDeckException ex)
+        {
+            Console.WriteLine($"Database error: {ex.Message}");
+            e.Reply(409, "Could not join the lobby - invalid deck");
+        }
         catch (AuthenticationException)
         {
             e.Reply(401, "Access token is missing or invalid");

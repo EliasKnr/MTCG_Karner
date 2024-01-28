@@ -14,6 +14,7 @@ public class BattleService : IBattleService
     private readonly UserRepository _userRepository;
     private CardRepository _cardRepository = new CardRepository();
     private StringBuilder _battleLog = new StringBuilder();
+    private List<Guid> defeatedCardIds = new List<Guid>();
 
     public BattleService()
     {
@@ -38,6 +39,7 @@ public class BattleService : IBattleService
         Console.WriteLine("-B-RunBattle-DecksShuffled");
         Console.WriteLine("-B-RunBattle-" + deck1.Count + "-Cards");
         _battleLog.AppendLine("Decks shuffled");
+        _battleLog.AppendLine("");
 
         // Execute the fixed number of battle rounds
         for (round = 0; round < deck1.Count; round++)
@@ -53,11 +55,13 @@ public class BattleService : IBattleService
             if (roundResult == card1)
             {
                 user1RoundsWon++;
+                defeatedCardIds.Add(card2.Id);
                 LogRoundResult(round, user1, card1, card2);
             }
             else if (roundResult == card2)
             {
                 user2RoundsWon++;
+                defeatedCardIds.Add(card1.Id);
                 LogRoundResult(round, user2, card1, card2);
             }
             else
@@ -65,9 +69,11 @@ public class BattleService : IBattleService
                 LogRoundResult(round, null, card1, card2);
             }
 
-            // Log the result of this round
+            _battleLog.AppendLine("");
         }
 
+        Console.WriteLine("-B-BattlesOver");
+        _battleLog.AppendLine("Battles are over - long live the king");
         if (round != 4) throw new BattleException("Law of four rounds has been broken");
 
         // Determine the overall winner based on rounds won
@@ -106,13 +112,12 @@ public class BattleService : IBattleService
 
     private Card BattleRound(Card card1, Card card2)
     {
-        // Implement the logic to execute a battle round using the card1 and card2
-        // This should apply the special abilities and determine the winner of the round
-        ApplySpecialAbilities(card1, card2);
         if (!(card1 is MonsterCard && card2 is MonsterCard))
         {
             ApplyElementalEffectivenessBothDirections(card1, card2);
         }
+
+        ApplySpecialAbilities(card1, card2);
 
         if (card1.Damage > card2.Damage) return card1;
         if (card2.Damage > card1.Damage) return card2;
@@ -126,12 +131,6 @@ public class BattleService : IBattleService
         // and refill the loser's deck with the next strongest cards
     }
 
-    private void HandleDraw(User user1, User user2)
-    {
-        // Implement what happens in case of a draw
-        Console.WriteLine("-B-RunBattle-Draw");
-    }
-
     private void LogRoundResult(int roundNumber, User winner, Card card1, Card card2)
     {
         roundNumber += 1;
@@ -139,12 +138,12 @@ public class BattleService : IBattleService
         {
             Console.WriteLine($"Round {roundNumber}: {winner.Username} wins with {card1.Name} against {card2.Name}");
             _battleLog.AppendLine(
-                $"Round {roundNumber}: {winner.Username} wins with {card1.Name} against {card2.Name}");
+                $"{winner.Username} wins with {card1.Name} against {card2.Name}");
         }
         else
         {
             Console.WriteLine($"Round {roundNumber}: Draw between {card1.Name} and {card2.Name}");
-            _battleLog.AppendLine($"Round {roundNumber}: Draw between {card1.Name} and {card2.Name}");
+            _battleLog.AppendLine($"Draw between {card1.Name} and {card2.Name}");
         }
     }
 
@@ -154,7 +153,9 @@ public class BattleService : IBattleService
         // Implement logging of the battle result
         // You could serialize the battle log to JSON, or just a plain string, and then save it to the database or a file
         Console.WriteLine($"Battle finished: {winner.Username} won against {loser.Username}");
-        _battleLog.AppendLine($"Battle finished: {winner.Username} won against {loser.Username}");
+        _battleLog.AppendLine($"The mighty {winner.Username} won against {loser.Username} the rat");
+        _battleLog.AppendLine("");
+        _battleLog.AppendLine("");
     }
 
     private void LogBattleDraw(User user1, User user2)
@@ -224,34 +225,47 @@ public class BattleService : IBattleService
         {
             // If ELOs are equal, neither user's ELO is changed
             Console.WriteLine("Both players have equal ELO, no ELO changes applied.");
-            _battleLog.AppendLine("Both players have equal ELO, no ELO changes applied.");
+            _userRepository.UpdateUserStats(user2.Id, 0, 0, 0);
+            _userRepository.UpdateUserStats(user1.Id, 0, 0, 0);
+            Console.WriteLine("Both players have equal ELO, no ELO changes applied.");
         }
     }
 
 
     public void ApplySpecialAbilities(Card card1, Card card2)
     {
-        // Goblin is too afraid of Dragon to attack.
+        Console.WriteLine("-ApplySpecialAbilities");
         if (card1.MonsterType == MonsterType.Goblin && card2.MonsterType == MonsterType.Dragon)
+        {
+            _battleLog.AppendLine("Goblin is too afraid of Dragon to attack.");
             card1.Damage = 0;
+        }
 
-        // Wizard can control Ork so they are not able to damage them.
         if (card1.MonsterType == MonsterType.Wizard && card2.MonsterType == MonsterType.Ork)
+        {
+            _battleLog.AppendLine("Wizard can control Ork so they are not able to damage them.");
             card2.Damage = 0;
+        }
 
-        // The armor of Knights is so heavy that WaterSpells make them drown instantly.
         if (card1.ElementType == ElementType.Water && card2.MonsterType == MonsterType.Knight)
+        {
+            _battleLog.AppendLine("The armor of Knights is so heavy that WaterSpells make them drown instantly.");
             card1.Damage *= 1000;
+        }
 
-        // The Kraken is immune against spells.
-        if (card2.MonsterType == MonsterType.Kraken &&
-            card1.MonsterType == null) // Assuming MonsterType is null for spells
+        if (card2.MonsterType == MonsterType.Kraken && card1.MonsterType == null)
+        {
+            _battleLog.AppendLine("The Kraken is immune against spells.");
             card1.Damage = 0;
+        }
 
-        // The FireElves know Dragons since they were little and can evade their attacks.
         if (card1.MonsterType == MonsterType.FireElf && card2.MonsterType == MonsterType.Dragon)
+        {
+            _battleLog.AppendLine("The FireElves know Dragons since they were little and can evade their attacks.");
             card2.Damage = 0;
+        }
     }
+
 
     public void ApplyElementalEffectivenessBothDirections(Card card1, Card card2)
     {
@@ -261,31 +275,70 @@ public class BattleService : IBattleService
 
     public void ApplyElementalEffectiveness(Card card1, Card card2)
     {
+        Console.WriteLine("-ApplyElementalEffectiveness");
+        card1.ElementType = DetermineElementType(card1.Name);
+        card2.ElementType = DetermineElementType(card2.Name);
+        _battleLog.AppendLine("Elements: " + card1.ElementType + "-" + card2.ElementType);
         if (card1.ElementType == ElementType.Water && card2.ElementType == ElementType.Fire)
         {
             card1.Damage *= 2;
+            _battleLog.AppendLine("(Effective)");
         }
         else if (card1.ElementType == ElementType.Fire && card2.ElementType == ElementType.Normal)
         {
             card1.Damage *= 2;
+            _battleLog.AppendLine("(Effective)");
         }
         else if (card1.ElementType == ElementType.Normal && card2.ElementType == ElementType.Water)
         {
             card1.Damage *= 2;
+            _battleLog.AppendLine("(Effective)");
         }
         else if (card1.ElementType == ElementType.Fire && card2.ElementType == ElementType.Water)
         {
             card1.Damage *= 0.5;
+            _battleLog.AppendLine("(Not Effective)");
         }
         else if (card1.ElementType == ElementType.Normal && card2.ElementType == ElementType.Fire)
         {
             card1.Damage *= 0.5;
+            _battleLog.AppendLine("(Not Effective)");
         }
         else if (card1.ElementType == ElementType.Water && card2.ElementType == ElementType.Normal)
         {
             card1.Damage *= 0.5;
+            _battleLog.AppendLine("(Not Effective)");
         }
+        else
+        {
+            _battleLog.AppendLine("(No Effect)");
+        }
+
         //no effect doesnt change damage
+    }
+
+    private ElementType DetermineElementType(string cardName)
+    {
+        switch (cardName)
+        {
+            case "Dragon":
+            case "FireElf":
+            case "FireSpell":
+                return ElementType.Fire;
+
+            case "Ork":
+            case "WaterSpell":
+            case "WaterGoblin":
+                return ElementType.Water;
+
+            case "Knight":
+            case "RegularSpell":
+                return ElementType.Normal;
+
+            default:
+                Console.WriteLine("Error: Card name does not match any known element types.");
+                return ElementType.Normal;
+        }
     }
 
     private static Random _rng = new Random();

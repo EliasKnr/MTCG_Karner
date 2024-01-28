@@ -200,7 +200,7 @@ public class UserRepository
 
     public UserStats GetUserStats(int userId)
     {
-        var query = "SELECT wins, losses, games_played FROM users WHERE id = @UserId";
+        var query = "SELECT wins, losses, games_played, elo FROM users WHERE id = @UserId";
         using (var conn = new NpgsqlConnection(DBAccess.ConnectionString))
         {
             conn.Open();
@@ -212,11 +212,17 @@ public class UserRepository
                 {
                     if (reader.Read())
                     {
+                        int wins = reader.GetInt32(reader.GetOrdinal("wins"));
+                        int losses = reader.GetInt32(reader.GetOrdinal("losses"));
+                        int draws = wins + losses;
+                        
                         return new UserStats
                         {
-                            Wins = reader.GetInt32(reader.GetOrdinal("wins")),
-                            Losses = reader.GetInt32(reader.GetOrdinal("losses")),
+                            Wins = wins,
+                            Losses = losses,
+                            Draws = draws,
                             GamesPlayed = reader.GetInt32(reader.GetOrdinal("games_played")),
+                            Elo = reader.GetInt32(reader.GetOrdinal("elo")),
                         };
                     }
                     else
