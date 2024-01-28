@@ -70,17 +70,15 @@ public class BattleLobby
         // Run battle logic in a separate thread to not block the lobby or the HTTP server
         try
         {
-
+            Task.Run(() => _battleService.RunBattle(user1, user2));
         }
         catch (BattleException ex)
         {
-            Console.WriteLine(ex);
+            Console.WriteLine($"BattleException: {ex.Message}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex);
-            throw;
+            Console.WriteLine($"Unexpected error during battle: {ex.Message}");
         }
-        Task.Run(() => _battleService.RunBattle(user1, user2));
     }
 }

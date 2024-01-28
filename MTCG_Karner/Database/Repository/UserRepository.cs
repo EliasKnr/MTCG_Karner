@@ -261,6 +261,21 @@ public class UserRepository
             Console.WriteLine($"Error updating user stats: {ex.Message}");
             throw;
         }
+
         Console.WriteLine("-B-UpdatedUserStats-" + userId);
+    }
+
+    public int GetUserElo(int userId)
+    {
+        // Your logic to get the user's ELO from the database
+        // For example:
+        string query = "SELECT elo FROM users WHERE id = @UserId";
+        using (var conn = new NpgsqlConnection(DBAccess.ConnectionString))
+        using (var cmd = new NpgsqlCommand(query, conn))
+        {
+            cmd.Parameters.AddWithValue("@UserId", userId);
+            conn.Open();
+            return (int)cmd.ExecuteScalar();
+        }
     }
 }

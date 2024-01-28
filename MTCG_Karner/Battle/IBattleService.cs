@@ -1,3 +1,4 @@
+using System.Text;
 using MTCG_Karner.Database.Repository;
 using MTCG_Karner.Models;
 
@@ -12,28 +13,39 @@ public class BattleService : IBattleService
 {
     private readonly UserRepository _userRepository;
     private CardRepository _cardRepository = new CardRepository();
+    private StringBuilder _battleLog = new StringBuilder();
 
     public BattleService()
     {
         _userRepository = new UserRepository();
     }
 
+    //-------------------------------------------------------------------
     public void RunBattle(User user1, User user2)
     {
         int round = 0;
         var user1RoundsWon = 0;
         var user2RoundsWon = 0;
+        _battleLog.Clear();
+        _battleLog.AppendLine("Battle started");
 
         // Load user decks
         var deck1 = _cardRepository.GetDeckByUserId(user1.Id);
         Shuffle(deck1);
         var deck2 = _cardRepository.GetDeckByUserId(user2.Id);
         Shuffle(deck2);
+
         Console.WriteLine("-B-RunBattle-DecksShuffled");
         Console.WriteLine("-B-RunBattle-" + deck1.Count + "-Cards");
+        _battleLog.AppendLine("Decks shuffled");
+
         // Execute the fixed number of battle rounds
         for (round = 0; round < deck1.Count; round++)
         {
+            int true_round = round + 1;
+            Console.WriteLine("-B-RunBattle-Round: " + true_round);
+            _battleLog.AppendLine("Battle-Round-" + true_round);
+
             var card1 = deck1[round]; // Assuming deck1 has at least 4 cards
             var card2 = deck2[round]; // Assuming deck2 has at least 4 cards
 
@@ -43,11 +55,14 @@ public class BattleService : IBattleService
                 user1RoundsWon++;
                 LogRoundResult(round, user1, card1, card2);
             }
-
-            if (roundResult == card2)
+            else if (roundResult == card2)
             {
                 user2RoundsWon++;
                 LogRoundResult(round, user2, card1, card2);
+            }
+            else
+            {
+                LogRoundResult(round, null, card1, card2);
             }
 
             // Log the result of this round
@@ -56,8 +71,8 @@ public class BattleService : IBattleService
         if (round != 4) throw new BattleException("Law of four rounds has been broken");
 
         // Determine the overall winner based on rounds won
-        User battleWinner;
-        User battleLoser;
+        User battleWinner = null;
+        User battleLoser = null;
         if (user1RoundsWon > user2RoundsWon)
         {
             battleWinner = user1;
@@ -68,22 +83,26 @@ public class BattleService : IBattleService
             battleWinner = user2;
             battleLoser = user1;
         }
+
+        // Transfer the defeated cards to the winner and update stats
+        if (battleWinner != null && battleLoser != null)
+        {
+            TransferDefeatedCards(battleWinner, battleLoser);
+            UpdateStats(battleWinner, battleLoser);
+            LogBattleResult(battleWinner, battleLoser);
+        }
         else
         {
-            // It's a draw, handle accordingly
-            HandleDraw(user1, user2);
-            return;
+            // It's a draw, no cards are transferred and no stats are updated
+            UpdateStatsDraw(user1, user2);
+            LogBattleDraw(user1, user2);
         }
 
-        // Transfer the defeated cards to the winner
-        TransferDefeatedCards(battleWinner, battleLoser);
-
-        // Update stats for both users
-        UpdateStats(battleWinner, battleLoser);
-
-        // Log the result of the battle
-        LogBattleResult(battleWinner, battleLoser);
+        CreateBattleLogFile(_battleLog.ToString());
     }
+    //-------------------------------------------------------------------
+    //-------------------------------------------------------------------
+
 
     private Card BattleRound(Card card1, Card card2)
     {
@@ -119,10 +138,13 @@ public class BattleService : IBattleService
         if (winner != null)
         {
             Console.WriteLine($"Round {roundNumber}: {winner.Username} wins with {card1.Name} against {card2.Name}");
+            _battleLog.AppendLine(
+                $"Round {roundNumber}: {winner.Username} wins with {card1.Name} against {card2.Name}");
         }
         else
         {
             Console.WriteLine($"Round {roundNumber}: Draw between {card1.Name} and {card2.Name}");
+            _battleLog.AppendLine($"Round {roundNumber}: Draw between {card1.Name} and {card2.Name}");
         }
     }
 
@@ -132,6 +154,38 @@ public class BattleService : IBattleService
         // Implement logging of the battle result
         // You could serialize the battle log to JSON, or just a plain string, and then save it to the database or a file
         Console.WriteLine($"Battle finished: {winner.Username} won against {loser.Username}");
+        _battleLog.AppendLine($"Battle finished: {winner.Username} won against {loser.Username}");
+    }
+
+    private void LogBattleDraw(User user1, User user2)
+    {
+        var drawMessage = "Battle resulted in a draw between " + user1.Username + " and " + user2.Username;
+        Console.WriteLine(drawMessage);
+        _battleLog.AppendLine(drawMessage);
+    }
+
+    private void CreateBattleLogFile(string logContent)
+    {
+        try
+        {
+            string basePath = AppDomain.CurrentDomain.BaseDirectory;
+            string logDirectory = Path.Combine(basePath, "Battle", "BattleLogs");
+            Console.WriteLine("-B-LogDirectory: " + logDirectory);
+            if (!Directory.Exists(logDirectory))
+            {
+                Directory.CreateDirectory(logDirectory);
+            }
+
+            string logFileName = $"{DateTime.Now:yyyyMMddHHmmss}.txt";
+            string logFilePath = Path.Combine(logDirectory, logFileName);
+            Console.WriteLine("-B-LogName: " + logFileName);
+            File.WriteAllText(logFilePath, logContent);
+            Console.WriteLine($"Log saved to: {logFilePath}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to create battle log file: {ex.Message}");
+        }
     }
 
     private void UpdateStats(User winner, User loser)
@@ -142,6 +196,36 @@ public class BattleService : IBattleService
 
         _userRepository.UpdateUserStats(winner.Id, 3, 1, 0); // +3 ELO for the winner
         _userRepository.UpdateUserStats(loser.Id, -5, 0, 1); // -5 ELO for the loser
+    }
+
+    private void UpdateStatsDraw(User user1, User user2)
+    {
+        Console.WriteLine("-B-UpdateStatsDraw");
+
+        // Retrieve current ELO scores from the database
+        var user1Elo = _userRepository.GetUserElo(user1.Id);
+        var user2Elo = _userRepository.GetUserElo(user2.Id);
+
+        if (user1Elo > user2Elo)
+        {
+            // User1 loses 2 ELO points, User2 gains 1 ELO point
+            _userRepository.UpdateUserStats(user1.Id, -2, 0, 0);
+            _userRepository.UpdateUserStats(user2.Id, 1, 0, 0);
+            Console.WriteLine("user1Elo > user2Elo");
+        }
+        else if (user2Elo > user1Elo)
+        {
+            // User2 loses 2 ELO points, User1 gains 1 ELO point
+            _userRepository.UpdateUserStats(user2.Id, -2, 0, 0);
+            _userRepository.UpdateUserStats(user1.Id, 1, 0, 0);
+            Console.WriteLine("user2Elo > user1Elo");
+        }
+        else
+        {
+            // If ELOs are equal, neither user's ELO is changed
+            Console.WriteLine("Both players have equal ELO, no ELO changes applied.");
+            _battleLog.AppendLine("Both players have equal ELO, no ELO changes applied.");
+        }
     }
 
 
@@ -222,8 +306,7 @@ public class BattleService : IBattleService
 
 public class BattleException : Exception
 {
-    public BattleException(string lawOfFourRoundsHasBeenBroken)
+    public BattleException(string message) : base(message)
     {
-        throw new NotImplementedException();
     }
 }
