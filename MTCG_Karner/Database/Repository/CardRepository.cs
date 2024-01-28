@@ -169,7 +169,7 @@ public class CardRepository
 
     public void RemoveCardFromDeck(int userId, Guid cardId)
     {
-        Console.WriteLine("-RemoveCardFromDeck");
+        //Console.WriteLine("-RemoveCardFromDeck");
         string[] cardSlots = { "card_id1", "card_id2", "card_id3", "card_id4" };
 
         using (var conn = new NpgsqlConnection(DBAccess.ConnectionString))
@@ -194,7 +194,7 @@ public class CardRepository
 
     public void TransferCardOwnership(Guid cardId, int newOwnerId)
     {
-        Console.WriteLine("-TransferCardOwnership");
+        //Console.WriteLine("-TransferCardOwnership");
 
         string query = "UPDATE cards SET owner_id = @NewOwnerId WHERE id = @CardId";
         using (var conn = new NpgsqlConnection(DBAccess.ConnectionString))

@@ -246,7 +246,6 @@ public class BattleService : IBattleService
         else
         {
             // If ELOs are equal, neither user's ELO is changed
-            Console.WriteLine("Both players have equal ELO, no ELO changes applied.");
             _userRepository.UpdateUserStats(user2.Id, 0, 0, 0);
             _userRepository.UpdateUserStats(user1.Id, 0, 0, 0);
             Console.WriteLine("Both players have equal ELO, no ELO changes applied.");

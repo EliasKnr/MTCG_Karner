@@ -31,6 +31,7 @@ public class BattleController
             {
                 // If successful, check if a battle can be started
                 _battleLobby.CheckForBattle();
+                e.Reply(200,"The battle has been carried out successfully.");
             }
             else
             {
