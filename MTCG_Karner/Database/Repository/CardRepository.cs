@@ -60,7 +60,8 @@ public class CardRepository
                         {
                             Id = reader.GetGuid(0),
                             Name = reader.GetString(1),
-                            Damage = reader.GetDouble(2)
+                            Damage = reader.GetDouble(2),
+                            Destroyed = false
                         };
                         userDeck.Add(card);
                     }

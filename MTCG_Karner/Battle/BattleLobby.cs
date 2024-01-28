@@ -33,17 +33,17 @@ public class BattleLobby
 
     public bool TryJoinLobby(User user)
     {
-        Console.WriteLine($"-B-{user.Username}(ID:{user.Id}) - Trying to Join Lobby");
+        Console.WriteLine($"-B-{user.Username}(ID:{user.Id})-TryingtoJoinLobby");
         lock (_lock)
         {
             if (_waitingUsers.Any(u => u.Id == user.Id))
             {
-                Console.WriteLine($"-B-{user.Username} is already in the lobby");
+                Console.WriteLine($"-B-{user.Username} already in the lobby");
                 return false;
             }
 
             _waitingUsers.Enqueue(user);
-            Console.WriteLine($"-B-{user.Username} joined lobby - In Lobby: {_waitingUsers.Count}");
+            Console.WriteLine($"-B-{user.Username} joined -InLobby: {_waitingUsers.Count}");
             return true;
         }
     }
@@ -66,8 +66,21 @@ public class BattleLobby
 
     private void StartBattle(User user1, User user2)
     {
-        Console.WriteLine("-B-StartBattle");
+        Console.WriteLine("-B-StartBattle---/-\\--");
         // Run battle logic in a separate thread to not block the lobby or the HTTP server
+        try
+        {
+
+        }
+        catch (BattleException ex)
+        {
+            Console.WriteLine(ex);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+            throw;
+        }
         Task.Run(() => _battleService.RunBattle(user1, user2));
     }
 }

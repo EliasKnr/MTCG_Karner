@@ -74,5 +74,5 @@ DELETE FROM decks;
 DELETE FROM packages;
 DELETE FROM cards;
 Delete From Users;
-DROP TABLE decks;
+
 

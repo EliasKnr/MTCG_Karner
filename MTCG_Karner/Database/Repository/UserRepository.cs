@@ -230,6 +230,7 @@ public class UserRepository
 
     public void UpdateUserStats(int userId, int eloChange, int winsChange, int lossesChange)
     {
+        Console.WriteLine("-UpdateUserStats");
         try
         {
             string query = @"

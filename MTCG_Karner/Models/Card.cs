@@ -7,12 +7,25 @@ public enum ElementType
     Normal
 }
 
+public enum MonsterType
+{
+    Goblin,
+    Dragon,
+    Wizard,
+    Ork,
+    Knight,
+    Kraken,
+    FireElf
+}
+
 public class Card
 {
     public Guid Id { get; set; }
     public string Name { get; set; }
     public double Damage { get; set; }
     public ElementType ElementType { get; set; }
+    public MonsterType? MonsterType { get; set; } // Nullable for spell cards
+    public bool Destroyed { get; set; }
 }
 
 public class MonsterCard : Card
