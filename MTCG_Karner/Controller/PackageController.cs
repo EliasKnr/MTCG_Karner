@@ -19,14 +19,12 @@ public class PackageController
         {
             var user = _userRepository.AuthenticateUser(e);
 
-            // Check for package availability first without deducting coins
             if (!_packageRepository.IsPackageAvailable())
             {
                 e.Reply(404, "No card package available for buying.");
                 return;
             }
 
-            // If a package is available, then deduct coins
             const int packageCost = 5;
             if (!_transactionRepository.DeductCoins(user, packageCost))
             {
@@ -34,7 +32,6 @@ public class PackageController
                 return;
             }
 
-            // Now that we have checked for package availability and deducted coins, we can acquire the package
             _packageRepository.AcquirePackageForUser(user);
             e.Reply(200, "Package acquired successfully");
         }

@@ -20,11 +20,9 @@ public class DeckController
             var user = _userRepository.AuthenticateUser(e);
             var deck = _cardRepository.GetDeckByUserId(user.Id);
 
-            // Extract format parameter from query string
             bool isPlainFormat = false;
             string queryString = e.Path.Contains("?") ? e.Path.Split('?')[1] : "";
 
-            // Split the query string into individual key-value pairs
             string[] queryParams = queryString.Split('&');
 
             foreach (string param in queryParams)
@@ -67,7 +65,6 @@ public class DeckController
 
     private string FormatDeckAsPlainText(List<Card> deck)
     {
-        // Implement logic to format deck as a plain text string
         return string.Join("\n", deck.Select(card => $"{card.Name} - Damage: {card.Damage}"));
     }
 

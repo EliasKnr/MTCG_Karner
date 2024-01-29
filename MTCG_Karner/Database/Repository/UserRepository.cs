@@ -34,29 +34,49 @@ public class UserRepository
         }
     }
 
+    public void DeleteUser(string username)
+    {
+        using (NpgsqlConnection connection = new NpgsqlConnection(DBAccess.ConnectionString))
+        {
+            connection.Open();
+            using (NpgsqlCommand command = new NpgsqlCommand())
+            {
+                command.Connection = connection;
+                command.CommandText = "DELETE FROM users WHERE username = @username";
+
+                command.Parameters.AddWithValue("@username", username);
+
+                int rowsAffected = command.ExecuteNonQuery();
+
+                if (rowsAffected == 0)
+                {
+                    Console.WriteLine("User not found or deleted.");
+                }
+                else
+                {
+                    Console.WriteLine("User deleted successfully.");
+                }
+            }
+        }
+    }
+
 
     //GetUserFromAuthHeader
     public User AuthenticateUser(HttpSvrEventArgs e)
     {
-        // Check for the presence of the event argument and the headers
         if (e == null || e.Headers == null)
         {
             throw new AuthenticationException("Access token is missing or invalid");
         }
 
-        // Try to find the Authorization header
         string authHeader = e.Headers.FirstOrDefault(h => h.Name.Equals("Authorization"))?.Value;
 
-        // If the Authorization header is not found or does not contain the expected bearer token, throw an exception
         if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer "))
         {
             throw new AuthenticationException("Access token is missing or invalid");
         }
 
-        // Extract the token part after "Bearer "
         string token = authHeader.Substring("Bearer ".Length).Trim();
-
-        // Extract the username part from the token
         string username = token.Replace("-mtcgToken", "");
 
         if (string.IsNullOrEmpty(username))
@@ -86,7 +106,6 @@ public class UserRepository
                         Id = int.Parse(reader["id"].ToString()),
                         Username = reader["username"].ToString(),
                         Coins = int.Parse(reader["coins"].ToString())
-                        // Populate other fields as necessary
                     };
                 }
             }
@@ -215,7 +234,7 @@ public class UserRepository
                         int wins = reader.GetInt32(reader.GetOrdinal("wins"));
                         int losses = reader.GetInt32(reader.GetOrdinal("losses"));
                         int draws = wins + losses;
-                        
+
                         return new UserStats
                         {
                             Wins = wins,
@@ -273,8 +292,6 @@ public class UserRepository
 
     public int GetUserElo(int userId)
     {
-        // Your logic to get the user's ELO from the database
-        // For example:
         string query = "SELECT elo FROM users WHERE id = @UserId";
         using (var conn = new NpgsqlConnection(DBAccess.ConnectionString))
         using (var cmd = new NpgsqlCommand(query, conn))

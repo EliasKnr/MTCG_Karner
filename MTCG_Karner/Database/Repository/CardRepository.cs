@@ -26,7 +26,6 @@ public class CardRepository
                             Id = reader.GetGuid(reader.GetOrdinal("id")),
                             Name = reader.GetString(reader.GetOrdinal("name")),
                             Damage = reader.GetDouble(reader.GetOrdinal("damage"))
-                            // Add additional fields if your Card model has more
                         };
                         userCards.Add(card);
                     }
@@ -71,7 +70,6 @@ public class CardRepository
         catch (NpgsqlException ex)
         {
             Console.WriteLine($"Database error in GetDeckByUserId: {ex.Message}");
-            // Handle or log the database error as needed
             throw;
         }
 
@@ -97,7 +95,6 @@ public class CardRepository
             conn.Open();
             var result = cmd.ExecuteScalar();
 
-            // Handle cases where the user might not have a deck yet
             if (result is DBNull)
                 return 0;
 
@@ -133,12 +130,10 @@ public class CardRepository
                         }
                     }
 
-                    // Delete the current deck (if exists)
                     var deleteDeckCmd = new NpgsqlCommand("DELETE FROM decks WHERE user_id = @UserId", conn);
                     deleteDeckCmd.Parameters.AddWithValue("@UserId", userId);
                     deleteDeckCmd.ExecuteNonQuery();
 
-                    // Insert new deck configuration
                     var insertDeckCmd =
                         new NpgsqlCommand(
                             "INSERT INTO decks (user_id, card_id1, card_id2, card_id3, card_id4) VALUES (@UserId, @CardId1, @CardId2, @CardId3, @CardId4)",
@@ -252,7 +247,7 @@ public class CardRepository
                     cmd.ExecuteNonQuery();
                 }
 
-                deck.Add(new Card { Id = cardId }); // Assuming Card class has an Id property
+                deck.Add(new Card { Id = cardId }); 
             }
             else
             {

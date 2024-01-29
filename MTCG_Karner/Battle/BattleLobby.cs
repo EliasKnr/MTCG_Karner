@@ -66,7 +66,7 @@ public class BattleLobby
         Console.WriteLine("-B-CheckForBattle-InLobby: " + _waitingUsers.Count);
         lock (_lock)
         {
-            if (_waitingUsers.Count >= 2) // Assuming a battle requires two users
+            if (_waitingUsers.Count >= 2) 
             {
                 Console.WriteLine("-B-CheckForBattle-StartBattle");
                 var user1 = _waitingUsers.Dequeue();
@@ -79,7 +79,6 @@ public class BattleLobby
     private void StartBattle(User user1, User user2)
     {
         Console.WriteLine("-B-StartBattle---/-\\--");
-        // Run battle logic in a separate thread to not block the lobby or the HTTP server
         try
         {
             Task.Run(() => _battleService.RunBattle(user1, user2));

@@ -44,13 +44,6 @@ CREATE TABLE IF NOT EXISTS packages (
                                         FOREIGN KEY (card_id5) REFERENCES cards(id)
 );
 
-CREATE TABLE IF NOT EXISTS user_cards (
-                                          user_id     INT             NOT NULL,
-                                          card_id     UUID            NOT NULL,
-                                          FOREIGN KEY (user_id) REFERENCES users(id),
-                                          FOREIGN KEY (card_id) REFERENCES cards(id)
-);
-
 CREATE TABLE IF NOT EXISTS decks (
                                      deck_id   SERIAL PRIMARY KEY,
                                      user_id   INT,

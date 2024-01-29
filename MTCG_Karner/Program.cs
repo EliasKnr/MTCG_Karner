@@ -35,13 +35,14 @@ namespace MTCG_Karner
 
             if (e.Path.StartsWith("/users") && e.Method.Equals("POST"))
             {
+                /*
                 Console.WriteLine("Contents of e:");
                 foreach (var property in e.GetType().GetProperties())
                 {
                     var name = property.Name;
                     var value = property.GetValue(e, null);
                     Console.WriteLine($"{name}: {value}");
-                }
+                }*/
 
                 _userController.CreateUser(e);
             }
@@ -63,12 +64,10 @@ namespace MTCG_Karner
             }
             else if (e.Path.StartsWith("/deck") && e.Method.Equals("GET"))
             {
-                Console.WriteLine("GetDeck");
                 _deckController.GetDeck(e);
             }
             else if (e.Path.Equals("/deck") && e.Method.Equals("PUT"))
             {
-                Console.WriteLine("-P--: " + e.Payload);
                 _deckController.ConfigureDeck(e);
             }
             else if (e.Path.StartsWith("/users/") && e.Method.Equals("GET"))

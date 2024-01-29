@@ -23,19 +23,16 @@ public class BattleController
         Console.WriteLine("-B-HandleBattleRequest");
         try
         {
-            // Extract the token and authenticate the user
             var user = _userRepository.AuthenticateUser(e);
 
-            // Attempt to join the user to the lobby
             if (_battleLobby.TryJoinLobby(user))
             {
-                // If successful, check if a battle can be started
                 _battleLobby.CheckForBattle();
                 e.Reply(200,"The battle has been carried out successfully.");
             }
             else
             {
-                e.Reply(409, "Could not join the lobby"); // or another appropriate status code
+                e.Reply(409, "Could not join the lobby");
             }
         }
         catch(NoValidDeckException ex)
