@@ -1,3 +1,29 @@
+UNIT TESTS:
+
+CreateUser_AddsNewUser_WhenUserDataIsValid:             Überprüft, ob ein neuer Benutzer korrekt erstellt wird, wenn Benutzerdaten gültig sind
+GetUserByUsername_ReturnsUser_WhenUserExists:           Stellt sicher, dass ein Benutzer korrekt abgerufen wird, wenn er existiert
+GetUserByUsername_ReturnsNull_WhenUserDoesNotExist:     Ob null zurückgegeben wird, wenn ein Benutzername nicht existiert
+AuthenticateUser_ReturnsUser_WhenCredentialsAreValid:   Überprüft Authentifizierung eines Benutzers mit gültigen Anmeldeinformationen
+DeleteUser_RemovesUser_WhenUserExists:                  Testet, ob ein Benutzer korrekt gelöscht wird, wenn er existiert
+UpdateUserData_UpdatesUser_WhenDataIsValid:             Überprüft Aktualisieren von Benutzerdaten, wenn neue Daten gültig
+GetUserStats_ReturnsCorrectStats_WhenUserExists:        Korrekte Benutzerstatistiken, wenn Benutzer existiert
+CreatePackage_SuccessfullyCreatesPackage:               Testet erfolgreiche Erstellen eines Pakets von Spielkarten
+AcquirePackageForUser_UserAcquiresPackageSuccessfully:  Überprüft, ob ein Benutzer erfolgreich ein Paket erwerben kann
+IsPackageAvailable_ReturnsTrueWhenPackagesExist:        Stellt sicher, dass true zurückgegeben wird, wenn Pakete (min 1) verfügbar sind
+GetDeck_ReturnsUserDeck_WhenUserExists:                 Dass das Kartendeck eines Benutzers korrekt abgerufen wird, wenn Benutzer existiert
+ConfigureDeck_UpdatesUserDeck_WhenDeckIsValid:          Testet Aktualisieren des Benutzerdecks, wenn neues Deck gültig
+AddCardsToDeck_AddsCards_WhenDeckIsNotFull:              Karten können zum Deck hinzugefügt werden, solange Deck nicht voll ist
+RemoveCardFromDeck_RemovesCard_WhenCardIsInDeck:        Überprüft Entfernen einer Karte aus dem Deck, wenn sie sich im Deck befindet
+TransferCardOwnership_ChangesCardOwner_WhenUserExists:  Testet Übertragen des Besitzes einer Karte an einen an Winner
+BattleRequest_JoinsLobbySuccessfully_WhenUserHasValidDeck: Ob ein Benutzer erfolgreich Lobby beitreten kann, wenn Deck gültig
+BattleRequest_FailsToJoinLobby_WhenUserHasInvalidDeck:  Ob Beitritt Lobby fehlschlägt, wenn Deck ungültig
+StartBattle_RunsSuccessfully_WhenTwoUsersInLobby:       Ein Kampf beginnt, wenn zwei Benutzer in Lobby
+BattleRound_ResultIsDraw_WhenEqualDamage:               Überprüft, ob Ergebnis Kampf unentschieden, wenn beide Karten den gleichen Schaden haben
+UpdateStats_ChangesEloAndStatsAfterBattle:              Testet Aktualisierung von ELO-Werten und Statistiken nach Kampf
+BattleRound_AppliesSpecialAbilities:                    Ob spezielle Fähigkeiten von Karten während eines Kampfes angewendet werden
+Test2:                                                  Grundlegender Test, sollte immer bestehen (test ob NUnit geht)
+
+
 Challenges and Solutions:
 
 Handling HTTP Requests: Struggle initially with managing HTTP requests in the UserController.
