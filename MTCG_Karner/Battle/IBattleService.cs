@@ -97,7 +97,7 @@ namespace MTCG_Karner.Battle
             CreateBattleLogFile(_battleLog.ToString());
         }
 
-        private Card BattleRound(Card card1, Card card2)
+        public Card BattleRound(Card card1, Card card2)
         {
             if (!(card1 is MonsterCard && card2 is MonsterCard))
             {
@@ -193,7 +193,7 @@ namespace MTCG_Karner.Battle
             }
         }
 
-        private void UpdateStats(User winner, User loser)
+        public void UpdateStats(User winner, User loser)
         {
             Console.WriteLine("-B-UpdateStats");
             Console.WriteLine("-B-UpdateStats-winner: " + winner.Username);

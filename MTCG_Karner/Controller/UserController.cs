@@ -9,10 +9,17 @@ namespace MTCG_Karner.Controller
 {
     public class UserController
     {
-        private UserRepository _userRepository = new UserRepository();
+        //private UserRepository _userRepository = new UserRepository();
+        private readonly IUserRepository _userRepository;
         private CardRepository _cardRepository = new CardRepository();
         private PackageRepository _packageRepository = new PackageRepository();
         private TransactionRepository _transactionRepository = new TransactionRepository();
+
+        public UserController(IUserRepository userRepository)
+        {
+            _userRepository = userRepository;
+        }
+
 
         public void CreateUser(HttpSvrEventArgs e)
         {
@@ -40,7 +47,9 @@ namespace MTCG_Karner.Controller
         public void LoginUser(HttpSvrEventArgs e)
         {
             var loginRequest = JsonConvert.DeserializeObject<UserDTO>(e.Payload);
-
+            
+            
+  
             try
             {
                 var user = _userRepository.GetUserByUsername(loginRequest.Username);
@@ -179,7 +188,7 @@ namespace MTCG_Karner.Controller
             {
                 var user = _userRepository.AuthenticateUser(e);
                 var stats = _userRepository.GetUserStats(user.Id);
-                Console.WriteLine(stats.Elo);
+                //Console.WriteLine(stats.Elo);
 
                 e.Reply(200, JsonConvert.SerializeObject(stats));
             }

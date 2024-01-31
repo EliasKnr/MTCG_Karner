@@ -1,5 +1,6 @@
 ﻿using MTCG_Karner.Battle;
 using MTCG_Karner.Controller;
+using MTCG_Karner.Database.Repository;
 using MTCG_Karner.Server;
 
 namespace MTCG_Karner
@@ -26,7 +27,8 @@ namespace MTCG_Karner
         /// <param name="e">Event arguments.</param>
         private static void _ProcessMessage(object sender, HttpSvrEventArgs e)
         {
-            UserController _userController = new UserController();
+            IUserRepository userRepository = new UserRepository();
+            UserController _userController = new UserController(userRepository);
             PackageController _packageController = new PackageController();
             DeckController _deckController = new DeckController();
             BattleController _battleController = new BattleController();

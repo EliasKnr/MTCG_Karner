@@ -59,7 +59,7 @@ public class DeckController
         catch (Exception ex)
         {
             Console.WriteLine($"Unexpected error: {ex.Message}");
-            e.Reply(500, "Internal Server Error");
+            e.Reply(500, "Internal Server Error"); 
         }
     }
 

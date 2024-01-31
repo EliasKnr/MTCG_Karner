@@ -6,7 +6,7 @@ using Npgsql;
 
 namespace MTCG_Karner.Database.Repository;
 
-public class UserRepository
+public class UserRepository : IUserRepository
 {
     public void CreateUser(User user)
     {
@@ -216,6 +216,7 @@ public class UserRepository
             }
         }
     }
+    
 
     public UserStats GetUserStats(int userId)
     {

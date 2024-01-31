@@ -257,32 +257,6 @@ public class CardRepository
     }
 
 
-    /*
-    public void TransferCardOwnership(Guid cardId, int newOwnerId)
-    {
-        string queryOwnership = "UPDATE cards SET owner_id = @NewOwnerId WHERE id = @CardId";
-        string queryDeckRemoval = "DELETE FROM deck WHERE card_id = @CardId";
-
-        using (var conn = new NpgsqlConnection(DBAccess.ConnectionString))
-        {
-            conn.Open();
-
-            using (var cmdOwnership = new NpgsqlCommand(queryOwnership, conn))
-            {
-                cmdOwnership.Parameters.AddWithValue("@NewOwnerId", newOwnerId);
-                cmdOwnership.Parameters.AddWithValue("@CardId", cardId);
-                cmdOwnership.ExecuteNonQuery();
-            }
-
-            using (var cmdDeckRemoval = new NpgsqlCommand(queryDeckRemoval, conn))
-            {
-                cmdDeckRemoval.Parameters.AddWithValue("@CardId", cardId);
-                cmdDeckRemoval.ExecuteNonQuery();
-            }
-        }
-    }*/
-
-
     public class CardOwnershipException : Exception
     {
         public CardOwnershipException(string message) : base(message)

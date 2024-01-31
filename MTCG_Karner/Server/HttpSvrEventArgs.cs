@@ -99,6 +99,9 @@ namespace MTCG_Karner.Server
         /// Gets the HTTP payload.
         /// </summary>
         public string Payload { get; protected set; }
+        
+        public string ResponseData { get; private set; }
+        public int ResponseCode { get; set; }
 
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // Public Methods                                                                                                   //
@@ -193,17 +196,43 @@ namespace MTCG_Karner.Server
                 data += "Content-Type: text/plain\n";
                 data += "\n" + payload;
             }
+            
+            //capture response data for testing
+            if (!string.IsNullOrEmpty(payload))
+            {
+                ResponseData = payload;
+            }
+            ResponseCode = status;
 
-            // Send the response
-            byte[] buf = Encoding.ASCII.GetBytes(data);
-            _Client.GetStream().Write(buf, 0, buf.Length);
-            _Client.Close();
-            _Client.Dispose();
+            // Skip network operations if _Client is null (in tests)
+            if (_Client != null)
+            {
+                byte[] buf = Encoding.ASCII.GetBytes(data);
+                _Client.GetStream().Write(buf, 0, buf.Length);
+                _Client.Close();
+                _Client.Dispose();
+            }
         }
 
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        // Private Methods                                                                                                  //
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        
+        //Test constructor
+        public HttpSvrEventArgs(TcpClient client, string plainMessage, IEnumerable<HttpHeader> headers) : this(client,
+            plainMessage)
+        {
+            Headers = headers.ToArray();
+        }
+
+        public HttpSvrEventArgs(TcpClient client, IEnumerable<HttpHeader> headers)
+        {
+            _Client = client;
+            Headers = headers.ToArray();
+        }
+
+        //for testing
+        public static HttpSvrEventArgs CreateForTest(string method, string path, string payload, Dictionary<string, string> headers)
+        {
+            var httpSvrEventArgs = new HttpSvrEventArgs(null, $"{method} {path} HTTP/1.1\n\n{payload}");
+            httpSvrEventArgs.Headers = headers.Select(kvp => new HttpHeader($"{kvp.Key}: {kvp.Value}")).ToArray();
+            return httpSvrEventArgs;
+        }
     }
 }
